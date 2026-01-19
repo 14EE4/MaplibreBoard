@@ -1,5 +1,4 @@
 import Head from 'next/head'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 const STATUS = {
@@ -101,18 +100,14 @@ export default function IndexPage() {
       <main className="container">
         <h1>MaplibreBoard</h1>
 
-        <ul className="links">
-          <li>
-            <Link href="/map" className="button">
-              Raster Map 보기
-            </Link>
-          </li>
-          <li>
-            <Link href="/admin" className="button">
-              관리자 페이지로 이동 (Admin)
-            </Link>
-          </li>
-        </ul>
+        <div className="button-group">
+          <button onClick={() => window.location.href = '/map'} className="button primary">
+            Raster Map 보기
+          </button>
+          <button onClick={() => window.location.href = '/admin'} className="button primary">
+            관리자 페이지로 이동 (Admin)
+          </button>
+        </div>
 
         <hr />
 
@@ -140,23 +135,40 @@ export default function IndexPage() {
           max-width: 720px;
           margin: 0 auto;
         }
-        .links,
+        .button-group {
+          display: flex;
+          gap: 12px;
+          margin: 24px 0;
+          flex-wrap: wrap;
+        }
+        .button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 6px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-weight: 600;
+        }
+        .button.primary {
+          background: #0070f3;
+          color: #fff;
+        }
+        .button.primary:hover {
+          background: #0051cc;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 112, 243, 0.3);
+        }
+        .button:active {
+          transform: translateY(0);
+        }
         .servers {
           list-style: none;
           padding: 0;
           margin: 0 0 12px 0;
         }
-        .links li,
         .servers li {
           margin-top: 8px;
-        }
-        .button {
-          display: inline-block;
-          padding: 8px 12px;
-          background: #0070f3;
-          color: #fff;
-          border-radius: 4px;
-          text-decoration: none;
         }
         .status {
           margin-bottom: 12px;
