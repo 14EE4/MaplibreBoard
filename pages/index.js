@@ -120,9 +120,9 @@ export default function IndexPage() {
             <li>Java: pyeong.p-e.kr:25565</li>
             <li>Bedrock: pyeong.p-e.kr:19132</li>
             <li>
-              <a className="button" href="http://bluemap.pyeong.p-e.kr">
+              <button onClick={() => window.open('http://bluemap.pyeong.p-e.kr')} className="button primary">
                 맵 보기
-              </a>
+              </button>
             </li>
           </ul>
         </section>
