@@ -3,6 +3,8 @@
 ## 📝 프로젝트 요약
 Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입니다. **MapLibre GL**을 사용하여 그리드 단위로 보드를 시각화하며, **Prisma ORM**을 통해 로컬 서버에 직접 설치된 **PostgreSQL**에 데이터를 저장합니다. 외부 클라우드 의존성을 제거하고 독립적인 서버 환경에서 구동되도록 최적화되었습니다.
 
+추가로 마인크래프트 서버(Java & Bedrock 겸용) 상태 모니터링 기능을 제공하여 실시간으로 서버 접속 현황을 확인할 수 있습니다.
+
 ## 🌐 배포 및 접속 정보
 - **배포 주소:** [https://pyeong.p-e.kr](https://pyeong.p-e.kr)
 - **운영 환경:** Ubuntu (Linux) / Nginx (Reverse Proxy) / Node.js v24
@@ -32,7 +34,6 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
 
     DATABASE_URL="postgresql://[DB_USER]:[DB_PASSWORD]@localhost:5432/maplibre_db"
-    NEXT_PUBLIC_MAPLIBRE_API_KEY="YOUR_API_KEY_HERE"
 
 ### 3. 의존성 설치 및 DB 동기화
 터미널에서 아래 명령어를 실행하여 테이블 구조를 생성합니다.
@@ -70,6 +71,12 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 - **접근성:** 보드 ID 또는 그리드 좌표(X, Y) 쿼리 파라미터를 통한 유연한 페이지 접속
 - **즉시 반영:** 새 글 작성 후 캐시를 비우고 즉시 목록을 다시 불러와 페이지를 새로고침할 때 지연 없이 최신 글이 표시됨
 
+### 🎮 마인크래프트 서버 모니터링
+- **실시간 상태:** minecraft-server-util을 사용하여 서버 온/오프라인 상태 및 접속 인원 확인
+- **자동 갱신:** 30초 간격으로 자동 폴링하여 서버 상태를 최신으로 유지
+- **Java & Bedrock:** 자바 에디션과 베드락 에디션 모두 지원하는 서버 정보 제공
+- **BlueMap 연동:** 마인크래프트 맵 뷰어(BlueMap) 바로가기 제공
+
 ---
 
 ## 🏗 시스템 아키텍처
@@ -84,13 +91,19 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 
 ## 📂 프로젝트 구조
     MaplibreBoardVervel/
-    ├── prisma/            # DB 모델(schema.prisma) 및 마이그레이션
+    ├── prisma/            # DB 모델(schema.prisma)
+    ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
+    ├── backup/            # 게시판 데이터 CSV 백업 (boards.csv, posts.csv)
     ├── pages/
-    │   ├── api/           # 보드/게시글 CRUD API 엔드포인트
+    │   ├── api/           # 보드/게시글 CRUD API 및 서버 상태 엔드포인트
+    │   ├── index.js       # 랜딩 페이지 (마인크래프트 서버 상태 표시)
     │   ├── map.js         # 메인 지도 인터페이스
-    │   └── board.js       # 게시판 및 CRUD 로직
+    │   ├── rasterMap2.js  # 래스터 지도 버전
+    │   ├── board.js       # 게시판 및 CRUD 로직
+    │   └── admin.js       # 관리자 페이지
     ├── lib/               # Prisma Client 인스턴스 (db.js)
     ├── public/            # 정적 파일 (Favicon, CSS 등)
+    ├── styles/            # 전역 스타일시트 (globals.css)
     └── next.config.js     # Next.js 설정
 
 ---
@@ -98,6 +111,8 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 ## 🚨 확인된 이슈 및 향후 계획 (TODO)
 - [ ] 0,0 좌표 보정: 특정 좌표 클릭 시 비정상 이동 문제 디버깅
 - [ ] 검색 기능 강화: 지명 검색을 통한 위치 이동(flyTo) 기능 도입
+- [ ] 백업 자동화: 정기적인 데이터베이스 백업 스크립트 개선
+- [ ] 관리자 기능 확장: admin.js 페이지 기능 강화 및 권한 관리
 - [ ] 인증 고도화: 관리자 비밀번호 방식을 서버사이드 JWT 인증으로 교체
 
 ---
