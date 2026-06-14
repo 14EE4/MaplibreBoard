@@ -3,8 +3,6 @@
 ## 📝 프로젝트 요약
 Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입니다. **MapLibre GL**을 사용하여 그리드 단위로 보드를 시각화하며, **Prisma ORM**을 통해 로컬 서버에 직접 설치된 **PostgreSQL**에 데이터를 저장합니다. 외부 클라우드 의존성을 제거하고 독립적인 서버 환경에서 구동되도록 최적화되었습니다.
 
-추가로 마인크래프트 서버(Java & Bedrock 겸용) 상태 모니터링 기능을 제공하여 실시간으로 서버 접속 현황을 확인할 수 있습니다.
-
 ## 🌐 배포 및 접속 정보
 - **배포 주소:** [https://pyeong.p-e.kr](https://pyeong.p-e.kr)
 - **운영 환경:** Ubuntu (Linux) / Nginx (Reverse Proxy) / Node.js v24
