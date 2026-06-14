@@ -30,7 +30,7 @@ export default function Admin() {
   function submitPw(e) {
     e.preventDefault()
     if (inputPw === ADMIN_PASSWORD) {
-      try { sessionStorage.setItem('admin-authed', '1') } catch (e) {}
+      try { sessionStorage.setItem('admin-authed', '1') } catch (e) { }
       setAuthorized(true)
       setError('')
     } else {
@@ -66,7 +66,7 @@ export default function Admin() {
 
       <section>
         <p>
-          <Link href="/index.html">퍼블릭 인덱스 페이지 보기</Link>
+          <Link href="/">퍼블릭 인덱스 페이지 보기</Link>
         </p>
         <h2>Boards</h2>
 
