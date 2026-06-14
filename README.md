@@ -9,6 +9,11 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 - **데이터베이스:** 로컬 PostgreSQL (Self-managed)
 - **프로세스 관리:** PM2 (무중단 운영)
 
+## 🌿 브랜치 전략 (Branch Strategy)
+이 저장소는 안전한 개발 및 무중단 배포를 위해 다음과 같은 브랜치 구조를 사용합니다.
+- `main`: 운영 서버에 직접 무중단 배포되는 최신 안정 버전(Production) 브랜치입니다.
+- `dev`: 신규 기능 테스트 및 활발한 개발이 이루어지는 메인 개발(Development) 브랜치입니다. 기능 추가 시 `dev` 브랜치에서 분기한 뒤 검증을 거쳐 `dev`로 병합합니다.
+
 ---
 
 ## 🚀 빠른 시작 (Local Server Setup)
