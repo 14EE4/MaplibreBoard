@@ -237,6 +237,29 @@ export default function IndexPage() {
             transform: translateY(0);
           }
         }
+
+        @media (max-width: 600px) {
+          .hero-title {
+            font-size: 36px;
+          }
+          .landing-container {
+            padding: 48px 16px 24px 16px;
+          }
+          .hero-subtitle {
+            font-size: 15px;
+            margin-bottom: 24px;
+          }
+          .button-group {
+            flex-direction: column;
+            width: 100%;
+            gap: 12px;
+          }
+          .button {
+            width: 100%;
+            padding: 12px 24px;
+            font-size: 15px;
+          }
+        }
       `}</style>
     </>
   )
