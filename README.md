@@ -86,6 +86,52 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
     pm2 save
     pm2 startup
 
+### 6. 운영 서버 업데이트 및 무중단 배포 (SSH & PM2)
+이미 가동 중인 원격 우분투 서버가 존재하고 SSH로만 접근이 가능한 상태에서 이미지 검열 갤러리 및 DB 업데이트 등을 안전하게 적용하는 방법입니다.
+
+1. **로컬 작업 완료 후 원격 코드 갱신**
+   로컬의 최신 커밋들을 깃허브 원격 저장소에 푸시하고, 서버로 SSH 접속하여 최신 소스를 동기화합니다.
+   ```bash
+   # [로컬 터미널] 코드 푸시
+   git push origin server-deploy
+
+   # [SSH 서버 터미널] 접속 및 소스 다운로드
+   ssh user@your-server-ip
+   cd /home/pyeongju/workspace/MaplibreBoardVervel  # 실제 서버 경로로 이동
+   git fetch --all
+   git pull origin server-deploy
+   ```
+
+2. **패키지 설치 및 DB 스키마 마이그레이션**
+   새로 도입된 이미지 저장 스키마 필드(`image_url` 등)를 로컬 PostgreSQL 데이터베이스에 무중단으로 반영합니다.
+   ```bash
+   # 패키지 설치
+   npm install
+
+   # Prisma 스키마 동기화 (기존 DB 데이터 유지됨)
+   npx prisma generate
+   npx prisma db push
+   ```
+
+3. **물리 업로드 디렉토리 권한 설정**
+   업로드된 이미지들이 저장될 폴더를 마련하고, 백그라운드 Node 프로세스가 파일 생성 및 쓰기를 수행할 수 있도록 권한을 보장합니다.
+   ```bash
+   mkdir -p public/uploads
+   chmod 755 public/uploads
+   ```
+
+4. **빌드 및 서비스 무중단 재로드**
+   ```bash
+   # Next.js 프로덕션 빌드
+   npm run build
+
+   # PM2 무중단 재로드
+   pm2 reload map-board
+
+   # 서버 작동 실시간 모니터링
+   pm2 logs map-board
+   ```
+
 ---
 
 ## 🛠 핵심 기능
