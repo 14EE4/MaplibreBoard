@@ -63,7 +63,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'fileName and action are required' });
       }
 
-      // Path Traversal Mitigation: extract only the base name of the file
+      // Path Traversal Mitigation: reject any input trying to escape directory structure
+      if (fileName !== path.basename(fileName)) {
+        return res.status(400).json({ error: 'Path traversal attempt detected' });
+      }
+
       const safeFileName = path.basename(fileName);
       const filePath = path.join(uploadDir, safeFileName);
 
