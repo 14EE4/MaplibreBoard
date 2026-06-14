@@ -70,7 +70,7 @@ npx prisma db push
 2. **WSL 내에서 프로젝트 경로 이동 및 패키지 설치**
    마운트된 프로젝트 디렉토리로 이동한 뒤, 의존성 패키지를 최종 설치 및 정리합니다.
    ```bash
-   cd /home/pyeongju/workspace/MaplibreBoardVervel
+   cd /home/username/workspace/MaplibreBoard
    npm install
    ```
 
@@ -111,7 +111,7 @@ pm2 startup
 
    # [SSH 서버 터미널] 접속 및 소스 다운로드
    ssh user@your-server-ip
-   cd /home/pyeongju/workspace/MaplibreBoardVervel  # 실제 서버 경로로 이동
+   cd /home/username/workspace/MaplibreBoard  # 실제 서버 경로로 이동
    git fetch --all
    git pull origin main
    ```
@@ -187,7 +187,7 @@ pm2 startup
 ---
 
 ## 📂 프로젝트 구조
-    MaplibreBoardVervel/
+    MaplibreBoard/
     ├── prisma/            # DB 모델(schema.prisma)
     ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
     ├── backup/            # 게시판 데이터 CSV 백업 (boards.csv, posts.csv)
@@ -212,7 +212,7 @@ pm2 startup
 ---
 
 ## 🚨 확인된 이슈 및 향후 계획 (TODO)
-- [x] 런타임 이미지 404 에러 해결 (캐시 우회 및 동적 서빙): [troubleshooting.md](file:///home/pyeongju/workspace/MaplibreBoardVervel/troubleshooting.md) 문서 참고
+- [x] 런타임 이미지 404 에러 해결 (캐시 우회 및 동적 서빙): [troubleshooting.md](./troubleshooting.md) 문서 참고
 - [x] 모바일 환경 이미지 업로드 이슈 해결: 모바일 브라우저의 `<label>` 클릭 전달 버그 해결, HEIC/HEIF 이미지 자동 JPEG 변환 및 모바일 대용량 이미지 클라이언트 측 압축 적용
 - [ ] 0,0 좌표 보정: 특정 좌표 클릭 시 비정상 이동 문제 디버깅
 - [ ] 검색 기능 강화: 지명 검색을 통한 위치 이동(flyTo) 기능 도입
