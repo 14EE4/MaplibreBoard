@@ -69,7 +69,7 @@ npx prisma db push
 2. **WSL 내에서 프로젝트 경로 이동 및 패키지 설치**
    마운트된 프로젝트 디렉토리로 이동한 뒤, 의존성 패키지를 최종 설치 및 정리합니다.
    ```bash
-   cd /mnt/e/workspace/agy_workspace/MaplibreBoardVervel
+   cd /home/pyeongju/workspace/MaplibreBoardVervel
    npm install
    ```
 
