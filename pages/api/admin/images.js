@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+  const uploadDir = path.join(process.cwd(), 'uploads');
 
   try {
     if (method === 'GET') {
