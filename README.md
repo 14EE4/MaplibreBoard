@@ -106,13 +106,13 @@ pm2 startup
    로컬의 최신 커밋들을 깃허브 원격 저장소에 푸시하고, 서버로 SSH 접속하여 최신 소스를 동기화합니다.
    ```bash
    # [로컬 터미널] 코드 푸시
-   git push origin server-deploy
+   git push origin main
 
    # [SSH 서버 터미널] 접속 및 소스 다운로드
    ssh user@your-server-ip
    cd /home/pyeongju/workspace/MaplibreBoardVervel  # 실제 서버 경로로 이동
    git fetch --all
-   git pull origin server-deploy
+   git pull origin main
    ```
 
 2. **패키지 설치 및 DB 스키마 마이그레이션**
@@ -129,8 +129,8 @@ pm2 startup
 3. **물리 업로드 디렉토리 권한 설정**
    업로드된 이미지들이 저장될 폴더를 마련하고, 백그라운드 Node 프로세스가 파일 생성 및 쓰기를 수행할 수 있도록 권한을 보장합니다.
    ```bash
-   mkdir -p public/uploads
-   chmod 755 public/uploads
+   mkdir -p uploads
+   chmod 755 uploads
    ```
 
 4. **빌드 및 서비스 무중단 재로드**
@@ -167,7 +167,7 @@ pm2 startup
 - **라이트박스 연동:** 피드 카드 내의 이미지를 클릭하면 페이지 이동 없이 그 자리에서 이미지를 확대해서 감상할 수 있는 라이트박스 뷰어가 실행됩니다.
 
 ### 🛡️ 어드민 이미지 검열 및 관리
-- **업로드 이미지 리스트:** 서버의 물리적 업로드 디렉토리(`public/uploads`)와 PostgreSQL DB를 정밀 분석하여 어떤 이미지 파일이 어떤 게시물에 사용 중인지 직관적으로 보여줍니다.
+- **업로드 이미지 리스트:** 서버의 물리적 업로드 디렉토리(`uploads/`)와 PostgreSQL DB를 정밀 분석하여 어떤 이미지 파일이 어떤 게시물에 사용 중인지 직관적으로 보여줍니다.
 - **고립 파일(Orphaned File) 감지:** DB 연동이 유실되어 저장 공간만 차지하는 이미지 파일을 식별해 줍니다.
 - **3단계 검열 처리:** 
   1. *이미지 파일만 삭제*: 게시물 텍스트 내용은 유지하되, 첨부된 이미지만 삭제 및 DB 링크 제거.
@@ -202,14 +202,15 @@ pm2 startup
     │   ├── all.js         # 전체 글 피드 페이지 (NEW)
     │   └── admin.js       # 관리자 페이지 (UI 갤러리 개편)
     ├── lib/               # Prisma Client 인스턴스 (db.js)
+    ├── uploads/           # 업로드된 물리 이미지 파일 저장소 (NEW: public 폴더 외부로 이동)
     ├── public/            # 정적 파일 (Favicon, CSS 등)
-    │   └── uploads/       # 업로드된 물리 이미지 파일 저장소
     ├── styles/            # 전역 스타일시트 (globals.css)
     └── next.config.js     # Next.js 설정
 
 ---
 
 ## 🚨 확인된 이슈 및 향후 계획 (TODO)
+- [x] 런타임 이미지 404 에러 해결 (캐시 우회 및 동적 서빙): [troubleshooting.md](file:///home/pyeongju/workspace/MaplibreBoardVervel/troubleshooting.md) 문서 참고
 - [ ] 0,0 좌표 보정: 특정 좌표 클릭 시 비정상 이동 문제 디버깅
 - [ ] 검색 기능 강화: 지명 검색을 통한 위치 이동(flyTo) 기능 도입
 - [ ] 백업 자동화: 정기적인 데이터베이스 백업 스크립트 개선
