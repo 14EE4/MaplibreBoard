@@ -16,7 +16,12 @@ export default async function handler(req, res) {
         const result = await query('SELECT * FROM posts WHERE board_id = $1 ORDER BY created_at DESC', [Number(board_id)])
         return res.status(200).json(result.rows)
       }
-      const result = await query('SELECT * FROM posts ORDER BY created_at DESC')
+      const result = await query(`
+        SELECT p.*, b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
+        FROM posts p
+        LEFT JOIN boards b ON p.board_id = b.id
+        ORDER BY p.created_at DESC
+      `)
       return res.status(200).json(result.rows)
     }
 
