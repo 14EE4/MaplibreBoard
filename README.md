@@ -32,7 +32,7 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 
 ### 2. 환경 변수 설정 (.env)
 > [!IMPORTANT]
-> 이 브랜치(`server-deploy`)는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
+> 이 브랜치(`feat/image-upload`)는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
 
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
 
@@ -48,7 +48,36 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
     npx prisma generate
     npx prisma db push
 
-### 4. 빌드 및 서버 실행 (PM2)
+### 4. WSL (Ubuntu) 기반 로컬 테스트 및 검증
+데이터베이스(PostgreSQL)가 WSL 환경에 기동되어 있는 경우, 아래 가이드를 통해 기능을 테스트할 수 있습니다.
+
+1. **WSL 접속 및 PostgreSQL 실행**
+   Windows 터미널에서 WSL Ubuntu를 실행하고 아래 명령어로 데이터베이스 서비스를 켭니다.
+   ```bash
+   sudo service postgresql start
+   ```
+
+2. **WSL 내에서 프로젝트 경로 이동 및 패키지 설치**
+   마운트된 프로젝트 디렉토리로 이동한 뒤, 의존성 패키지를 최종 설치 및 정리합니다.
+   ```bash
+   cd /mnt/e/workspace/agy_workspace/MaplibreBoardVervel
+   npm install
+   ```
+
+3. **DB 테이블 스키마 동기화**
+   Prisma CLI를 통해 로컬 DB에 새로 추가된 컬럼(`image_url` 등)을 연동합니다.
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+4. **로컬 개발 서버 실행 및 브라우저 테스트**
+   ```bash
+   npm run dev
+   ```
+   서버가 켜지면 브라우저를 통해 `http://localhost:3000/board?id=1` 혹은 격자 좌표로 접속하여 이미지 첨부, 글 작성 및 이미지 확대(Lightbox) 동작을 검증할 수 있습니다.
+
+### 5. 빌드 및 배포 실행 (PM2)
     # 프로젝트 빌드
     npm run build
 
