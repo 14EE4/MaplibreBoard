@@ -54,6 +54,14 @@ export default async function handler(req, res) {
       if (!id || !content) return res.status(400).json({ error: 'id and content required' })
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
+      // Verify existing post password before updating to prevent unauthorized edits
+      const existing = await query('SELECT password FROM posts WHERE id = $1', [Number(id)])
+      if (!existing || existing.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      const stored = existing.rows[0].password
+      if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
+        return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
+      }
+
       const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, hashed, id])
       if (!result || result.rowCount === 0) return res.status(404).json({ error: 'not found' })
       return res.status(200).json(result.rows[0])
