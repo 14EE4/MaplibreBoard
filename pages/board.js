@@ -498,7 +498,7 @@ export default function Board() {
                       <div key={p.id} className="post-card">
                         <div className="post-header">
                           <span className="post-author">{p.author ? escapeHtml(p.author) : '익명'}</span>
-                          <span className="post-date">{p.createdAt ? formatTime(p.createdAt) : ''}</span>
+                          <span className="post-date">{p.created_at ? formatTime(p.created_at) : ''}</span>
                         </div>
 
                         <div className="post-body">
