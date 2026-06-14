@@ -327,166 +327,259 @@ export default function Board() {
   }
 
   return (
-    <main style={{ padding: 16, fontFamily: 'Arial, Helvetica, sans-serif' }}>
+    <>
       <Head>
-        <title>게시판</title>
+        <title>{boardMeta ? `${boardMeta.name} - MaplibreBoard` : '게시판'}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
       </Head>
-      <h1 id="title">게시판</h1>
-      <div id="boardMeta" style={{ color: '#666', fontSize: 13, marginBottom: 8 }}>{metaText}</div>
-      {!boardMeta && !loading && (
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ marginBottom: 6, color: '#444' }}>보드가 존재하지 않거나 데이터베이스에 연결되어 있지 않습니다.</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={()=>createBoardAndOpen()}>새 보드 생성 및 이동</button>
-            <button onClick={()=>{
-              const name = (typeof window !== 'undefined' && typeof window.prompt === 'function') ? window.prompt('생성할 보드 이름을 입력하세요','새 보드') : null
-              createBoardAndOpen(name)
-            }}>이름 지정하여 생성</button>
+
+      <main className="board-container">
+        {/* Header Navigation */}
+        <header className="board-header">
+          <div className="header-back">
+            <button onClick={() => window.location.href = '/map'} className="btn btn-secondary btn-sm">
+              ← 지도 보기
+            </button>
+            <button onClick={() => window.location.href = '/'} className="btn btn-secondary btn-sm ml-2">
+              메인으로
+            </button>
           </div>
-        </div>
-      )}
-      {boardMeta && (
-        <div style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
-          <div><strong>보드 ID:</strong> {resolvedBoardId || boardMeta.id || '(알 수 없음)'}</div>
-          <div><strong>이름:</strong> {boardMeta.name || '(이름 없음)'}</div>
-          {((boardMeta.grid_x != null) || (boardMeta.x != null)) && ((boardMeta.grid_y != null) || (boardMeta.y != null)) && <div><strong>그리드:</strong> {(boardMeta.grid_x != null) ? boardMeta.grid_x : boardMeta.x}, {(boardMeta.grid_y != null) ? boardMeta.grid_y : boardMeta.y}</div>}
-          {((boardMeta.posts_count != null) || (boardMeta.count != null)) && <div><strong>게시물 수:</strong> {(boardMeta.posts_count != null) ? boardMeta.posts_count : boardMeta.count}</div>}
-          {((boardMeta.center_lng != null) || (boardMeta.lng != null)) && ((boardMeta.center_lat != null) || (boardMeta.lat != null)) && <div><strong>중심 좌표:</strong> {(boardMeta.center_lng != null) ? boardMeta.center_lng : boardMeta.lng}, {(boardMeta.center_lat != null) ? boardMeta.center_lat : boardMeta.lat}</div>}
-        </div>
-      )}
+          <div className="header-brand">
+            <h1>격자 게시판</h1>
+          </div>
+        </header>
 
-      <div style={{ background: '#fffbdd', border: '1px solid #ffe58f', padding: 8, borderRadius: 4, marginBottom: 12 }}>
-        이 페이지는 클라이언트에서 격자 좌표 또는 보드 ID로 게시글을 불러옵니다.
-        URL 예시: <code>/board?grid_x=0&grid_y=0</code>, <code>/board?id=1</code>
-      </div>
-
-      <section id="newPost">
-        <h3>새 글 작성</h3>
-        <input id="author" placeholder="작성자 (선택)" style={{ width: '100%', padding: 6, boxSizing: 'border-box', marginBottom: 6 }} value={author} onChange={e=>setAuthor(e.target.value)} />
-        <textarea id="content" placeholder="내용을 입력하세요..." style={{ width: '100%', height: 100 }} value={content} onChange={e=>setContent(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
-        
-        {/* 파일 첨부 영역 */}
-        <div style={{ marginTop: 6, marginBottom: 8 }}>
-          <label htmlFor="imageInput" style={{ display: 'inline-block', padding: '6px 12px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer', fontSize: 13, fontWeight: 'bold' }}>
-            📷 사진 첨부
-          </label>
-          <input id="imageInput" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-          
-          {imagePreview && (
-            <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
-              <img src={imagePreview} alt="미리보기" style={{ maxWidth: 200, maxHeight: 150, borderRadius: 6, border: '1px solid #ddd' }} />
-              <button onClick={handleRemoveImage} style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 12 }}>
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input id="postPassword" placeholder="4자리 비밀번호 (선택)" maxLength={4} style={{ width: 180, padding: 6, boxSizing: 'border-box' }} value={postPassword} onChange={e=>setPostPassword(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
-          <small style={{ color: '#666' }}>* 비밀번호를 설정하면 해당 비밀번호로 수정/삭제 가능</small>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <button id="submitPost" onClick={submitPost} disabled={loading}>{loading ? '전송 중...' : '전송'}</button>
-          <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>Ctrl+Enter로 전송</span>
-        </div>
-      </section>
-
-      <div id="posts" style={{ marginTop: 12 }}>
-        {loading && <div className="meta">로딩 중...</div>}
-        {!loading && (!posts || posts.length === 0) && <div className="meta">게시글이 없습니다.</div>}
-        {posts.map(p => (
-          <div key={p.id} style={{ border: '1px solid #ddd', padding: 8, borderRadius: 6, marginBottom: 8 }}>
-            <div dangerouslySetInnerHTML={{ __html: (p.author ? `<strong>${escapeHtml(p.author)}</strong>` : '<strong>익명</strong>') + ' <span style="color:#888;font-size:12px">' + (p.createdAt ? formatTime(p.createdAt) : '') + '</span>' }} />
-            <div style={{ marginTop: 6 }}>
-              {editing[p.id] && editing[p.id].editing ? (
-                <textarea style={{ width: '100%', height: 120 }} value={editing[p.id].value} onChange={ev=>setEditing(prev=>({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} onKeyDown={ev=>{ if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(p.id); } }} />
-              ) : (
-                <>
-                  <div className="post-content" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
-                  {p.image_url && (
-                    <div style={{ marginTop: 8 }}>
-                      <img 
-                        src={p.image_url} 
-                        alt="첨부 이미지" 
-                        onClick={() => setLightboxImage(p.image_url)}
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: 300, 
-                          borderRadius: 6, 
-                          cursor: 'pointer', 
-                          border: '1px solid #eee',
-                          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                        }} 
-                        className="post-image"
-                      />
+        <div className="board-layout">
+          {/* Left Column: Board Metadata */}
+          <aside className="board-sidebar">
+            <div className="sidebar-card">
+              <h2>게시판 정보</h2>
+              <div className="meta-info-text">{metaText}</div>
+              
+              {boardMeta ? (
+                <div className="meta-details">
+                  <div className="meta-row">
+                    <span className="meta-label">보드 ID</span>
+                    <span className="meta-val">{resolvedBoardId || boardMeta.id || '(알 수 없음)'}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">보드 이름</span>
+                    <span className="meta-val highlight-text">{boardMeta.name || '(이름 없음)'}</span>
+                  </div>
+                  {((boardMeta.grid_x != null) || (boardMeta.x != null)) && (
+                    <div className="meta-row">
+                      <span className="meta-label">격자 좌표</span>
+                      <span className="meta-val">({(boardMeta.grid_x != null) ? boardMeta.grid_x : boardMeta.x}, {(boardMeta.grid_y != null) ? boardMeta.grid_y : boardMeta.y})</span>
                     </div>
                   )}
-                </>
-              )}
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <input id={`pwd-${p.id}`} type="password" placeholder="비밀번호" maxLength={4} style={{ marginRight: 8, padding: 6, width: 120 }} onKeyDown={ev=>{ if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); if (editing[p.id] && editing[p.id].editing) { saveEdit(p.id); } else { verifyAndEdit(p.id); } } }} />
-              {editing[p.id] && editing[p.id].editing ? (
-                <>
-                  <button onClick={()=>saveEdit(p.id)}>저장</button>
-                  <button onClick={()=>setEditing(e=>{ const c={...e}; delete c[p.id]; return c })} style={{ marginLeft: 6 }}>취소</button>
-                </>
+                  {((boardMeta.posts_count != null) || (boardMeta.count != null)) && (
+                    <div className="meta-row">
+                      <span className="meta-label">게시물 수</span>
+                      <span className="meta-val badge-count">{(boardMeta.posts_count != null) ? boardMeta.posts_count : boardMeta.count}개</span>
+                    </div>
+                  )}
+                  {((boardMeta.center_lng != null) || (boardMeta.lng != null)) && (
+                    <div className="meta-row">
+                      <span className="meta-label">중심 좌표</span>
+                      <span className="meta-val">
+                        {((boardMeta.center_lng != null) ? boardMeta.center_lng : boardMeta.lng).toFixed(4)}, {((boardMeta.center_lat != null) ? boardMeta.center_lat : boardMeta.lat).toFixed(4)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <>
-                  <button onClick={()=>verifyAndEdit(p.id)} style={{ marginRight: 6 }}>수정</button>
-                  <button onClick={()=>deletePost(p.id)}>삭제</button>
-                </>
+                !loading && (
+                  <div className="empty-board-setup">
+                    <p>현재 격자에 활성화된 게시판 보드가 없거나 아직 데이터베이스에 등록되어 있지 않습니다.</p>
+                    <div className="setup-buttons">
+                      <button onClick={() => createBoardAndOpen()} className="btn btn-primary btn-sm btn-full mb-2">
+                        기본 보드 생성 및 열기
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const name = (typeof window !== 'undefined' && typeof window.prompt === 'function') 
+                            ? window.prompt('생성할 보드 이름을 입력하세요', '새 보드') 
+                            : null
+                          createBoardAndOpen(name)
+                        }} 
+                        className="btn btn-secondary btn-sm btn-full"
+                      >
+                        이름 직접 지정하여 생성
+                      </button>
+                    </div>
+                  </div>
+                )
               )}
             </div>
-          </div>
-        ))}
-      </div>
+
+            <div className="info-helper-box">
+              <p>💡 <strong>안내:</strong> 격자별 좌표(X, Y) 쿼리 파라미터를 통해 페이지로 다이렉트 접근이 가능합니다.</p>
+              <code>예: /board?grid_x=61&grid_y=25</code>
+            </div>
+          </aside>
+
+          {/* Right Column: Feed and Writing Form */}
+          <section className="board-main-content">
+            {boardMeta && (
+              <>
+                {/* Write Post Card */}
+                <div className="write-card">
+                  <h3>새 글 작성</h3>
+                  <div className="write-form">
+                    <input 
+                      id="author" 
+                      placeholder="작성자 닉네임 (선택)" 
+                      value={author} 
+                      onChange={e => setAuthor(e.target.value)} 
+                      className="input-field" 
+                    />
+                    <textarea 
+                      id="content" 
+                      placeholder="따뜻한 한 마디를 적어보세요... (Ctrl+Enter로 즉시 전송)" 
+                      value={content} 
+                      onChange={e => setContent(e.target.value)} 
+                      onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
+                      className="textarea-field"
+                    />
+
+                    {/* Image Upload Area */}
+                    <div className="upload-wrapper">
+                      <label htmlFor="imageInput" className="btn btn-secondary btn-sm upload-btn">
+                        📷 사진 첨부하기
+                      </label>
+                      <input id="imageInput" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                      
+                      {imagePreview && (
+                        <div className="image-preview-box">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={imagePreview} alt="업로드 미리보기" className="preview-img" />
+                          <button onClick={handleRemoveImage} className="remove-preview-btn" title="사진 제거">
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-footer">
+                      <div className="pwd-input-group">
+                        <input 
+                          id="postPassword" 
+                          type="password"
+                          placeholder="수정용 비밀번호 (선택)" 
+                          maxLength={4} 
+                          value={postPassword} 
+                          onChange={e => setPostPassword(e.target.value)} 
+                          onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
+                          className="input-field pwd-field" 
+                        />
+                        <span className="pwd-helper">* 입력 시 추후 수정/삭제 가능</span>
+                      </div>
+                      
+                      <button id="submitPost" onClick={submitPost} disabled={loading} className="btn btn-primary">
+                        {loading ? '전송 중...' : '게시글 등록'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Posts Timeline List */}
+                <div className="posts-timeline">
+                  <h3>최신 게시글 피드</h3>
+                  
+                  {loading && <div className="timeline-state">불러오는 중...</div>}
+                  {!loading && posts.length === 0 && (
+                    <div className="empty-timeline">
+                      <p>아직 등록된 게시물이 없습니다. 첫 번째 글을 작성해 보세요!</p>
+                    </div>
+                  )}
+
+                  <div className="posts-list">
+                    {posts.map(p => (
+                      <div key={p.id} className="post-card">
+                        <div className="post-header">
+                          <span className="post-author">{p.author ? escapeHtml(p.author) : '익명'}</span>
+                          <span className="post-date">{p.createdAt ? formatTime(p.createdAt) : ''}</span>
+                        </div>
+
+                        <div className="post-body">
+                          {editing[p.id] && editing[p.id].editing ? (
+                            <textarea 
+                              className="textarea-field edit-textarea"
+                              value={editing[p.id].value} 
+                              onChange={ev => setEditing(prev => ({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} 
+                              onKeyDown={ev => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(p.id); } }} 
+                            />
+                          ) : (
+                            <>
+                              <p className="post-text" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
+                              {p.image_url && (
+                                <div className="post-image-container">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img 
+                                    src={p.image_url} 
+                                    alt="첨부 이미지" 
+                                    onClick={() => setLightboxImage(p.image_url)}
+                                    className="post-image"
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+
+                        <div className="post-actions-panel">
+                          <input 
+                            id={`pwd-${p.id}`} 
+                            type="password" 
+                            placeholder="비밀번호" 
+                            maxLength={4} 
+                            className="input-field pwd-action-field"
+                            onKeyDown={ev => { 
+                              if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { 
+                                ev.preventDefault(); 
+                                if (editing[p.id] && editing[p.id].editing) { saveEdit(p.id); } else { verifyAndEdit(p.id); } 
+                              } 
+                            }} 
+                          />
+                          
+                          {editing[p.id] && editing[p.id].editing ? (
+                            <div className="action-buttons">
+                              <button onClick={() => saveEdit(p.id)} className="btn btn-primary btn-sm mr-2">저장</button>
+                              <button onClick={() => setEditing(e => { const c = { ...e }; delete c[p.id]; return c })} className="btn btn-secondary btn-sm">취소</button>
+                            </div>
+                          ) : (
+                            <div className="action-buttons">
+                              <button onClick={() => verifyAndEdit(p.id)} className="btn btn-secondary btn-sm mr-2">수정</button>
+                              <button onClick={() => deletePost(p.id)} className="btn btn-danger-outline btn-sm">삭제</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      </main>
 
       {/* 라이트박스 모달 뷰어 */}
       {lightboxImage && (
         <div 
           onClick={() => setLightboxImage(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            animation: 'fadeIn 0.25s ease-out',
-          }}
+          className="lightbox-overlay"
         >
-          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+          <div className="lightbox-wrapper">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={lightboxImage} 
               alt="확대 이미지" 
-              style={{ 
-                maxWidth: '100%', 
-                maxHeight: '90vh', 
-                borderRadius: 8, 
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                display: 'block',
-                margin: 'auto'
-              }} 
+              className="lightbox-img"
             />
             <button 
               onClick={(e) => { e.stopPropagation(); setLightboxImage(null); }}
-              style={{
-                position: 'absolute',
-                top: -40,
-                right: 0,
-                background: 'transparent',
-                color: '#fff',
-                border: 'none',
-                fontSize: 32,
-                cursor: 'pointer',
-                fontWeight: '300',
-              }}
+              className="lightbox-close-btn"
             >
               ✕
             </button>
@@ -495,17 +588,525 @@ export default function Board() {
       )}
 
       <style jsx global>{`
+        body {
+          background-color: #0b0f19;
+          color: #f3f4f6;
+          font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .board-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 40px 24px;
+        }
+
+        .board-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding-bottom: 24px;
+        }
+
+        .header-brand h1 {
+          font-size: 24px;
+          font-weight: 700;
+          margin: 0;
+          background: linear-gradient(135deg, #60a5fa, #3b82f6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        /* Two-column layout */
+        .board-layout {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 32px;
+        }
+
+        @media (max-width: 900px) {
+          .board-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        /* Sidebar Styling */
+        .sidebar-card {
+          background: rgba(17, 24, 39, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          padding: 24px;
+          margin-bottom: 20px;
+        }
+
+        .sidebar-card h2 {
+          font-size: 18px;
+          font-weight: 600;
+          margin: 0 0 20px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding-bottom: 12px;
+        }
+
+        .meta-info-text {
+          color: #9ca3af;
+          font-size: 13px;
+          margin-bottom: 12px;
+        }
+
+        .meta-details {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .meta-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 14px;
+        }
+
+        .meta-label {
+          color: #9ca3af;
+        }
+
+        .meta-val {
+          color: #f3f4f6;
+          font-weight: 600;
+        }
+
+        .highlight-text {
+          color: #60a5fa;
+        }
+
+        .badge-count {
+          background: rgba(96, 165, 250, 0.1);
+          color: #60a5fa;
+          padding: 2px 8px;
+          border-radius: 6px;
+        }
+
+        .info-helper-box {
+          background: rgba(245, 158, 11, 0.05);
+          border: 1px solid rgba(245, 158, 11, 0.15);
+          border-radius: 12px;
+          padding: 16px;
+          font-size: 13px;
+          color: #fcd34d;
+        }
+
+        .info-helper-box p {
+          margin: 0 0 8px 0;
+        }
+
+        .info-helper-box code {
+          background: rgba(0, 0, 0, 0.25);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-family: monospace;
+          color: #f59e0b;
+        }
+
+        /* Form & Content Area */
+        .write-card {
+          background: rgba(17, 24, 39, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          padding: 28px;
+          margin-bottom: 32px;
+        }
+
+        .write-card h3 {
+          font-size: 18px;
+          font-weight: 600;
+          margin: 0 0 20px 0;
+        }
+
+        .write-form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .input-field {
+          background: rgba(31, 41, 55, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          color: #f3f4f6;
+          padding: 12px 16px;
+          font-size: 15px;
+          font-family: inherit;
+          transition: all 0.2s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+          background: rgba(31, 41, 55, 0.7);
+        }
+
+        .textarea-field {
+          background: rgba(31, 41, 55, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          color: #f3f4f6;
+          padding: 14px 16px;
+          font-size: 15px;
+          font-family: inherit;
+          min-height: 110px;
+          resize: vertical;
+          transition: all 0.2s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .textarea-field:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+          background: rgba(31, 41, 55, 0.7);
+        }
+
+        /* Upload Area */
+        .upload-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-top: 4px;
+        }
+
+        .upload-btn {
+          cursor: pointer;
+        }
+
+        .image-preview-box {
+          position: relative;
+          display: inline-block;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          overflow: hidden;
+          background: #111827;
+        }
+
+        .preview-img {
+          max-width: 160px;
+          max-height: 110px;
+          display: block;
+          object-fit: cover;
+        }
+
+        .remove-preview-btn {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          background: rgba(0, 0, 0, 0.6);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 22px;
+          height: 22px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: bold;
+          transition: background-color 0.2s;
+        }
+
+        .remove-preview-btn:hover {
+          background: #ef4444;
+        }
+
+        .form-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding-top: 16px;
+        }
+
+        .pwd-input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .pwd-field {
+          width: 190px !important;
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+
+        .pwd-helper {
+          color: #6b7280;
+          font-size: 11px;
+        }
+
+        /* Timeline / Cards feed */
+        .posts-timeline {
+          background: rgba(17, 24, 39, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          border-radius: 16px;
+          padding: 28px;
+        }
+
+        .posts-timeline h3 {
+          font-size: 18px;
+          font-weight: 600;
+          margin: 0 0 20px 0;
+        }
+
+        .timeline-state {
+          text-align: center;
+          padding: 32px;
+          color: #9ca3af;
+        }
+
+        .empty-timeline {
+          text-align: center;
+          padding: 60px 24px;
+          color: #9ca3af;
+          border: 1px dashed rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+        }
+
+        .posts-list {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .post-card {
+          background: rgba(31, 41, 55, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          transition: border-color 0.2s;
+        }
+
+        .post-card:hover {
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .post-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 13px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          padding-bottom: 8px;
+        }
+
+        .post-author {
+          font-weight: 600;
+          color: #60a5fa;
+        }
+
+        .post-date {
+          color: #6b7280;
+        }
+
+        .post-body {
+          font-size: 15px;
+          line-height: 1.5;
+          color: #e5e7eb;
+        }
+
+        .post-text {
+          margin: 0;
+          word-break: break-all;
+        }
+
+        .post-image-container {
+          margin-top: 12px;
+          display: inline-block;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: #111827;
+        }
+
+        .post-image {
+          max-width: 100%;
+          max-height: 260px;
+          object-fit: contain;
+          display: block;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+
+        .post-image:hover {
+          transform: scale(1.01);
+        }
+
+        /* Post Editing and Action buttons */
+        .edit-textarea {
+          font-size: 14px;
+          min-height: 90px;
+        }
+
+        .post-actions-panel {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-top: 1px solid rgba(255, 255, 255, 0.03);
+          padding-top: 12px;
+        }
+
+        .pwd-action-field {
+          width: 120px !important;
+          padding: 6px 10px;
+          font-size: 12px;
+        }
+
+        .action-buttons {
+          display: flex;
+        }
+
+        /* Buttons styles (Global match) */
+        .btn {
+          font-family: inherit;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-sizing: border-box;
+        }
+
+        .btn-sm {
+          padding: 6px 12px;
+          font-size: 12px;
+          border-radius: 6px;
+        }
+
+        .btn-primary {
+          background: #3b82f6;
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background: #2563eb;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+          background: rgba(255, 255, 255, 0.08);
+          color: #e5e7eb;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: white;
+        }
+
+        .btn-danger-outline {
+          background: none;
+          border: 1px solid rgba(239, 68, 68, 0.4);
+          color: #f87171;
+        }
+
+        .btn-danger-outline:hover {
+          background: rgba(239, 68, 68, 0.1);
+          border-color: #ef4444;
+          color: white;
+        }
+
+        .btn-full {
+          width: 100%;
+        }
+
+        .empty-board-setup {
+          font-size: 13px;
+          color: #9ca3af;
+          line-height: 1.5;
+        }
+
+        .setup-buttons {
+          margin-top: 16px;
+        }
+
+        .mb-2 {
+          margin-bottom: 8px;
+        }
+
+        .ml-2 {
+          margin-left: 8px;
+        }
+        
+        .mr-2 {
+          margin-right: 8px;
+        }
+
+        /* Lightbox styles */
+        .lightbox-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .lightbox-wrapper {
+          position: relative;
+          max-width: 90%;
+          max-height: 90%;
+        }
+
+        .lightbox-img {
+          max-width: 100%;
+          max-height: 90vh;
+          border-radius: 8px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          display: block;
+          margin: auto;
+        }
+
+        .lightbox-close-btn {
+          position: absolute;
+          top: -44px;
+          right: 0;
+          background: transparent;
+          color: #fff;
+          border: none;
+          font-size: 32px;
+          cursor: pointer;
+          font-weight: 300;
+          transition: color 0.2s;
+        }
+
+        .lightbox-close-btn:hover {
+          color: #ef4444;
+        }
+
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        .post-image:hover {
-          transform: scale(1.015);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-        }
       `}</style>
-
-      <p><a href="/map">← Back</a></p>
-    </main>
+    </>
   )
 }
