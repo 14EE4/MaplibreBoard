@@ -633,6 +633,25 @@ export default function Board() {
           }
         }
 
+        @media (max-width: 600px) {
+          .board-header {
+            flex-direction: column-reverse;
+            align-items: flex-start;
+            gap: 12px;
+          }
+          .form-footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .pwd-field {
+            width: 100% !important;
+          }
+          .form-footer .btn {
+            width: 100%;
+          }
+        }
+
         /* Sidebar Styling */
         .sidebar-card {
           background: rgba(17, 24, 39, 0.5);
@@ -987,6 +1006,7 @@ export default function Board() {
           align-items: center;
           justify-content: center;
           box-sizing: border-box;
+          white-space: nowrap;
         }
 
         .btn-sm {

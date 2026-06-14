@@ -411,6 +411,17 @@ export default function AllFeedPage() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
+
+        @media (max-width: 600px) {
+          .feed-header {
+            flex-direction: column-reverse;
+            align-items: flex-start;
+            gap: 16px;
+          }
+          .btn-back {
+            width: 100%;
+          }
+        }
       `}</style>
     </>
   )
