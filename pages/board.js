@@ -37,28 +37,128 @@ export default function Board() {
   const [editing, setEditing] = useState({}) // { postId: { editing: true, value: '...' } }
   const [imagePreview, setImagePreview] = useState(null)
   const [lightboxImage, setLightboxImage] = useState(null)
+  const [imageError, setImageError] = useState(null)
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
+  const loadHeic2Any = () => {
+    return new Promise((resolve, reject) => {
+      if (window.heic2any) {
+        resolve(window.heic2any)
+        return
+      }
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js'
+      script.onload = () => {
+        if (window.heic2any) {
+          resolve(window.heic2any)
+        } else {
+          reject(new Error('heic2any 라이브러리를 로드하지 못했습니다.'))
+        }
+      }
+      script.onerror = () => {
+        reject(new Error('HEIC 변환 라이브러리(heic2any) 로드 중 오류가 발생했습니다.'))
+      }
+      document.head.appendChild(script)
+    })
+  }
+
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_WIDTH = 1280
+          const MAX_HEIGHT = 1280
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+          resolve(dataUrl)
+        }
+        img.onerror = () => {
+          reject(new Error('이미지 로드에 실패했습니다.'))
+        }
+        img.src = event.target.result
+      }
+      reader.onerror = () => {
+        reject(new Error('파일 읽기에 실패했습니다.'))
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleFileChange = async (e) => {
+    let file = e.target.files[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 첨부할 수 있습니다.')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('이미지 크기는 5MB 이하여야 합니다.')
-      return
-    }
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setImagePreview(reader.result)
+    setImageError(null)
+    setLoading(true)
+    setMetaText('이미지 처리 중...')
+
+    try {
+      const fileName = file.name.toLowerCase()
+      const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif'
+
+      if (isHeic) {
+        try {
+          const heic2any = await loadHeic2Any()
+          const converted = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.8
+          })
+          const blob = Array.isArray(converted) ? converted[0] : converted
+          file = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
+        } catch (err) {
+          console.error('HEIC conversion failed', err)
+          setImageError('HEIC 이미지 변환에 실패했습니다. (다른 형식의 이미지를 사용해 주세요)')
+          setLoading(false)
+          setMetaText('')
+          return
+        }
+      }
+
+      if (!file.type.startsWith('image/')) {
+        setImageError('이미지 파일만 첨부할 수 있습니다.')
+        setLoading(false)
+        setMetaText('')
+        return
+      }
+
+      // Compress and resize
+      const compressedDataUrl = await compressImage(file)
+      setImagePreview(compressedDataUrl)
+      setMetaText('')
+    } catch (err) {
+      console.error('Image compression failed', err)
+      setImageError(err.message || '이미지 처리 중 오류가 발생했습니다.')
+      setMetaText('')
+    } finally {
+      setLoading(false)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleRemoveImage = () => {
     setImagePreview(null)
+    setImageError(null)
     const fileInput = document.getElementById('imageInput')
     if (fileInput) fileInput.value = ''
   }
@@ -210,6 +310,7 @@ export default function Board() {
       setContent('')
       setPostPassword('')
       setImagePreview(null)
+      setImageError(null)
       const fileInput = document.getElementById('imageInput')
       if (fileInput) fileInput.value = ''
 
@@ -443,19 +544,31 @@ export default function Board() {
                     />
 
                     {/* Image Upload Area */}
-                    <div className="upload-wrapper">
-                      <label htmlFor="imageInput" className="btn btn-secondary btn-sm upload-btn">
-                        📷 사진 첨부하기
-                      </label>
-                      <input id="imageInput" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                      
-                      {imagePreview && (
-                        <div className="image-preview-box">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={imagePreview} alt="업로드 미리보기" className="preview-img" />
-                          <button onClick={handleRemoveImage} className="remove-preview-btn" title="사진 제거">
-                            ✕
-                          </button>
+                    <div className="upload-wrapper" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => document.getElementById('imageInput')?.click()}
+                          disabled={loading}
+                          className="btn btn-secondary btn-sm upload-btn"
+                        >
+                          📷 사진 첨부하기
+                        </button>
+                        <input id="imageInput" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                        
+                        {imagePreview && (
+                          <div className="image-preview-box">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={imagePreview} alt="업로드 미리보기" className="preview-img" />
+                            <button onClick={handleRemoveImage} className="remove-preview-btn" title="사진 제거">
+                              ✕
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {imageError && (
+                        <div className="upload-error-msg" style={{ color: '#ef4444', fontSize: '13px', margin: '4px 0 0 0' }}>
+                          ⚠️ {imageError}
                         </div>
                       )}
                     </div>
