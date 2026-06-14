@@ -39,10 +39,11 @@ ALTER SCHEMA public OWNER TO [DB_USER];
 > [!IMPORTANT]
 > 이 프로젝트는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
 
-프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
+프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소와 관리자 비밀번호를 입력합니다. (Git 제외 대상)
 
 ```env
 DATABASE_URL="postgresql://[DB_USER]:[DB_PASSWORD]@localhost:5432/maplibre_db"
+ADMIN_PASSWORD="your_admin_password_here"
 ```
 
 ### 3. 의존성 설치 및 DB 동기화
@@ -193,7 +194,8 @@ pm2 startup
     ├── pages/
     │   ├── api/           # 보드/게시글 CRUD API
     │   │   ├── admin/
-    │   │   │   └── images.js # 어드민 이미지 조회 및 검열 API (NEW)
+    │   │   │   ├── images.js # 어드민 이미지 조회 및 검열 API (NEW)
+    │   │   │   └── verify.js # 관리자 비밀번호 서버 사이드 검증 API (NEW)
     │   │   └── ...
     │   ├── index.js       # 랜딩 페이지 (전체 피드 버튼 추가)
     │   ├── map.js         # 메인 지도 인터페이스
