@@ -27,7 +27,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid image format. Must be a base64 image data URI.' });
     }
 
-    const fileExtension = matches[1];
+    const fileExtension = matches[1].toLowerCase();
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    if (!allowedExtensions.includes(fileExtension)) {
+      return res.status(400).json({ error: '허용되지 않는 이미지 파일 형식입니다. (png, jpg, jpeg, webp, gif만 가능)' });
+    }
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
 
