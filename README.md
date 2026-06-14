@@ -37,7 +37,7 @@ ALTER SCHEMA public OWNER TO [DB_USER];
 
 ### 2. 환경 변수 설정 (.env)
 > [!IMPORTANT]
-> 이 브랜치(`feat/image-upload`)는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
+> 이 프로젝트는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
 
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
 
