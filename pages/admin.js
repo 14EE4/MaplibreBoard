@@ -2,8 +2,6 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-const ADMIN_PASSWORD = '1q2w3e4r!'
-
 export default function Admin() {
   const [boards, setBoards] = useState([])
   const [authorized, setAuthorized] = useState(false)
@@ -22,9 +20,25 @@ export default function Admin() {
     try {
       const ok = sessionStorage.getItem('admin-authed')
       const storedPw = sessionStorage.getItem('admin-pw')
-      if (ok === '1' && storedPw === ADMIN_PASSWORD) {
-        setAuthorized(true)
-        setInputPw(storedPw)
+      if (ok === '1' && storedPw) {
+        fetch('/api/admin/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password: storedPw }),
+        })
+          .then((res) => {
+            if (res.ok) {
+              setAuthorized(true)
+              setInputPw(storedPw)
+            } else {
+              logout()
+            }
+          })
+          .catch(() => {
+            logout()
+          })
       }
     } catch (e) {
       // ignore
@@ -64,17 +78,29 @@ export default function Admin() {
     }
   }
 
-  function submitPw(e) {
+  async function submitPw(e) {
     e.preventDefault()
-    if (inputPw === ADMIN_PASSWORD) {
-      try {
-        sessionStorage.setItem('admin-authed', '1')
-        sessionStorage.setItem('admin-pw', inputPw)
-      } catch (e) { }
-      setAuthorized(true)
-      setError('')
-    } else {
-      setError('비밀번호가 틀렸습니다.')
+    setError('')
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: inputPw }),
+      })
+      if (res.ok) {
+        try {
+          sessionStorage.setItem('admin-authed', '1')
+          sessionStorage.setItem('admin-pw', inputPw)
+        } catch (e) { }
+        setAuthorized(true)
+      } else {
+        setError('비밀번호가 틀렸습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      setError('서버 통신에 실패했습니다.')
     }
   }
 
