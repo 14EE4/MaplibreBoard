@@ -74,17 +74,9 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 - **접근성:** 보드 ID 또는 그리드 좌표(X, Y) 쿼리 파라미터를 통한 유연한 페이지 접속
 - **즉시 반영:** 새 글 작성 후 캐시를 비우고 즉시 목록을 다시 불러와 페이지를 새로고침할 때 지연 없이 최신 글이 표시됨
 
-### 🎮 마인크래프트 서버 모니터링
-- **실시간 상태:** minecraft-server-util을 사용하여 서버 온/오프라인 상태 및 접속 인원 확인
-- **자동 갱신:** 30초 간격으로 자동 폴링하여 서버 상태를 최신으로 유지
-- **Java & Bedrock:** 자바 에디션과 베드락 에디션 모두 지원하는 서버 정보 제공
-- **BlueMap 연동:** 마인크래프트 맵 뷰어(BlueMap) 바로가기 제공
-
 ---
 
 ## 🏗 시스템 아키텍처
-
-
 
 - **Reverse Proxy:** Nginx가 80(HTTP)을 443(HTTPS)으로 리다이렉트하고 3000번 포트로 전달
 - **App Server:** Next.js (PM2로 프로세스 관리)
@@ -98,8 +90,8 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
     ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
     ├── backup/            # 게시판 데이터 CSV 백업 (boards.csv, posts.csv)
     ├── pages/
-    │   ├── api/           # 보드/게시글 CRUD API 및 서버 상태 엔드포인트
-    │   ├── index.js       # 랜딩 페이지 (마인크래프트 서버 상태 표시)
+    │   ├── api/           # 보드/게시글 CRUD API
+    │   ├── index.js       # 랜딩 페이지
     │   ├── map.js         # 메인 지도 인터페이스
     │   ├── rasterMap2.js  # 래스터 지도 버전
     │   ├── board.js       # 게시판 및 CRUD 로직

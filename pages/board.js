@@ -35,6 +35,33 @@ export default function Board() {
   const [postPassword, setPostPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState({}) // { postId: { editing: true, value: '...' } }
+  const [imagePreview, setImagePreview] = useState(null)
+  const [lightboxImage, setLightboxImage] = useState(null)
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 첨부할 수 있습니다.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('이미지 크기는 5MB 이하여야 합니다.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setImagePreview(null)
+    const fileInput = document.getElementById('imageInput')
+    if (fileInput) fileInput.value = ''
+  }
 
   const escapeHtml = (str) => {
     if (!str) return ''
@@ -135,11 +162,30 @@ export default function Board() {
     const contentVal = (content || '').trim()
     const pw = (postPassword || '').trim()
     if (!contentVal) { alert('내용을 입력하세요.'); return }
-    const payload = { author: authorVal, content: contentVal }
-    if (pw) payload.password = pw
 
     setLoading(true)
     try {
+      let finalImageUrl = null
+
+      // If an image is selected, upload it first
+      if (imagePreview) {
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imagePreview })
+        })
+        if (!uploadRes.ok) {
+          const uploadErr = await uploadRes.json().catch(() => ({}))
+          throw new Error(uploadErr.error || '이미지 업로드에 실패했습니다.')
+        }
+        const uploadData = await uploadRes.json()
+        finalImageUrl = uploadData.url
+      }
+
+      const payload = { author: authorVal, content: contentVal }
+      if (pw) payload.password = pw
+      if (finalImageUrl) payload.image_url = finalImageUrl
+
       // use central posts API: provide board_id in body
       const fullPayload = { ...payload, board_id: Number(resolvedBoardId) }
       const res = await fetch(`/api/posts`, {
@@ -163,6 +209,10 @@ export default function Board() {
       console.log('post success', body)
       setContent('')
       setPostPassword('')
+      setImagePreview(null)
+      const fileInput = document.getElementById('imageInput')
+      if (fileInput) fileInput.value = ''
+
       try {
         // 새 글 작성 후 전체 페이지 새로고침으로 최신 상태 반영
         window.location.reload()
@@ -171,7 +221,7 @@ export default function Board() {
       }
     } catch (err) {
       console.error('post failed', err)
-      alert('작성 실패. 콘솔을 확인하세요.')
+      alert(err.message || '작성 실패. 콘솔을 확인하세요.')
     } finally {
       setLoading(false)
     }
@@ -314,12 +364,30 @@ export default function Board() {
         <h3>새 글 작성</h3>
         <input id="author" placeholder="작성자 (선택)" style={{ width: '100%', padding: 6, boxSizing: 'border-box', marginBottom: 6 }} value={author} onChange={e=>setAuthor(e.target.value)} />
         <textarea id="content" placeholder="내용을 입력하세요..." style={{ width: '100%', height: 100 }} value={content} onChange={e=>setContent(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
+        
+        {/* 파일 첨부 영역 */}
+        <div style={{ marginTop: 6, marginBottom: 8 }}>
+          <label htmlFor="imageInput" style={{ display: 'inline-block', padding: '6px 12px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer', fontSize: 13, fontWeight: 'bold' }}>
+            📷 사진 첨부
+          </label>
+          <input id="imageInput" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+          
+          {imagePreview && (
+            <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}>
+              <img src={imagePreview} alt="미리보기" style={{ maxWidth: 200, maxHeight: 150, borderRadius: 6, border: '1px solid #ddd' }} />
+              <button onClick={handleRemoveImage} style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 12 }}>
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
+
         <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
           <input id="postPassword" placeholder="4자리 비밀번호 (선택)" maxLength={4} style={{ width: 180, padding: 6, boxSizing: 'border-box' }} value={postPassword} onChange={e=>setPostPassword(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
           <small style={{ color: '#666' }}>* 비밀번호를 설정하면 해당 비밀번호로 수정/삭제 가능</small>
         </div>
         <div style={{ marginTop: 8 }}>
-          <button id="submitPost" onClick={submitPost}>전송</button>
+          <button id="submitPost" onClick={submitPost} disabled={loading}>{loading ? '전송 중...' : '전송'}</button>
           <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>Ctrl+Enter로 전송</span>
         </div>
       </section>
@@ -334,7 +402,27 @@ export default function Board() {
               {editing[p.id] && editing[p.id].editing ? (
                 <textarea style={{ width: '100%', height: 120 }} value={editing[p.id].value} onChange={ev=>setEditing(prev=>({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} onKeyDown={ev=>{ if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(p.id); } }} />
               ) : (
-                <div className="post-content" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
+                <>
+                  <div className="post-content" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
+                  {p.image_url && (
+                    <div style={{ marginTop: 8 }}>
+                      <img 
+                        src={p.image_url} 
+                        alt="첨부 이미지" 
+                        onClick={() => setLightboxImage(p.image_url)}
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: 300, 
+                          borderRadius: 6, 
+                          cursor: 'pointer', 
+                          border: '1px solid #eee',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                        }} 
+                        className="post-image"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
             <div style={{ marginTop: 8 }}>
@@ -354,6 +442,68 @@ export default function Board() {
           </div>
         ))}
       </div>
+
+      {/* 라이트박스 모달 뷰어 */}
+      {lightboxImage && (
+        <div 
+          onClick={() => setLightboxImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            animation: 'fadeIn 0.25s ease-out',
+          }}
+        >
+          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+            <img 
+              src={lightboxImage} 
+              alt="확대 이미지" 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '90vh', 
+                borderRadius: 8, 
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                display: 'block',
+                margin: 'auto'
+              }} 
+            />
+            <button 
+              onClick={(e) => { e.stopPropagation(); setLightboxImage(null); }}
+              style={{
+                position: 'absolute',
+                top: -40,
+                right: 0,
+                background: 'transparent',
+                color: '#fff',
+                border: 'none',
+                fontSize: 32,
+                cursor: 'pointer',
+                fontWeight: '300',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .post-image:hover {
+          transform: scale(1.015);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+      `}</style>
 
       <p><a href="/map">← Back</a></p>
     </main>
