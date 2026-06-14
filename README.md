@@ -16,17 +16,19 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 ### 1. 로컬 PostgreSQL 설치 및 권한 설정
 서버에 데이터베이스를 설치하고 프로젝트 전용 사용자와 권한을 설정합니다.
 
-    # PostgreSQL 설치
-    sudo apt update && sudo apt install postgresql
+```bash
+# PostgreSQL 설치
+sudo apt update && sudo apt install postgresql
 
-    # DB 및 사용자 생성 (sudo -u postgres psql 접속 후 실행)
-    CREATE DATABASE maplibre_db;
-    CREATE USER [DB_USER] WITH PASSWORD '[DB_PASSWORD]';
-    GRANT ALL PRIVILEGES ON DATABASE maplibre_db TO [DB_USER];
+# DB 및 사용자 생성 (sudo -u postgres psql 접속 후 실행)
+CREATE DATABASE maplibre_db;
+CREATE USER [DB_USER] WITH PASSWORD '[DB_PASSWORD]';
+GRANT ALL PRIVILEGES ON DATABASE maplibre_db TO [DB_USER];
 
-    # 권한 설정 (PostgreSQL 15+ 대응)
-    GRANT ALL ON SCHEMA public TO [DB_USER];
-    ALTER SCHEMA public OWNER TO [DB_USER];
+# 권한 설정 (PostgreSQL 15+ 대응)
+GRANT ALL ON SCHEMA public TO [DB_USER];
+ALTER SCHEMA public OWNER TO [DB_USER];
+```
 
 ### 2. 환경 변수 설정 (.env)
 > [!IMPORTANT]
@@ -34,17 +36,21 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
 
-    DATABASE_URL="postgresql://[DB_USER]:[DB_PASSWORD]@localhost:5432/maplibre_db"
+```env
+DATABASE_URL="postgresql://[DB_USER]:[DB_PASSWORD]@localhost:5432/maplibre_db"
+```
 
 ### 3. 의존성 설치 및 DB 동기화
 터미널에서 아래 명령어를 실행하여 테이블 구조를 생성합니다.
 
-    # 패키지 설치
-    npm install
+```bash
+# 패키지 설치
+npm install
 
-    # Prisma Client 생성 및 로컬 DB 테이블 생성
-    npx prisma generate
-    npx prisma db push
+# Prisma Client 생성 및 로컬 DB 테이블 생성
+npx prisma generate
+npx prisma db push
+```
 
 ### 4. WSL (Ubuntu) 기반 로컬 테스트 및 검증
 데이터베이스(PostgreSQL)가 WSL 환경에 기동되어 있는 경우, 아래 가이드를 통해 기능을 테스트할 수 있습니다.
@@ -76,15 +82,17 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
    서버가 켜지면 브라우저를 통해 `http://localhost:3000/board?id=1` 혹은 격자 좌표로 접속하여 이미지 첨부, 글 작성 및 이미지 확대(Lightbox) 동작을 검증할 수 있습니다.
 
 ### 5. 빌드 및 배포 실행 (PM2)
-    # 프로젝트 빌드
-    npm run build
+```bash
+# 프로젝트 빌드
+npm run build
 
-    # PM2를 이용한 백그라운드 가동
-    pm2 start npm --name "map-board" -- start
+# PM2를 이용한 백그라운드 가동
+pm2 start npm --name "map-board" -- start
 
-    # 서버 재부팅 시 자동 실행 저장
-    pm2 save
-    pm2 startup
+# 서버 재부팅 시 자동 실행 저장
+pm2 save
+pm2 startup
+```
 
 ### 6. 운영 서버 업데이트 및 무중단 배포 (SSH & PM2)
 이미 가동 중인 원격 우분투 서버가 존재하고 SSH로만 접근이 가능한 상태에서 이미지 검열 갤러리 및 DB 업데이트 등을 안전하게 적용하는 방법입니다.
