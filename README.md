@@ -9,6 +9,11 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 - **데이터베이스:** 로컬 PostgreSQL (Self-managed)
 - **프로세스 관리:** PM2 (무중단 운영)
 
+## 🌿 브랜치 전략 (Branch Strategy)
+이 저장소는 안전한 개발 및 무중단 배포를 위해 다음과 같은 브랜치 구조를 사용합니다.
+- `main`: 운영 서버에 직접 무중단 배포되는 최신 안정 버전(Production) 브랜치입니다.
+- `dev`: 신규 기능 테스트 및 활발한 개발이 이루어지는 메인 개발(Development) 브랜치입니다. 기능 추가 시 `dev` 브랜치에서 분기한 뒤 검증을 거쳐 `dev`로 병합합니다.
+
 ---
 
 ## 🚀 빠른 시작 (Local Server Setup)
@@ -32,7 +37,7 @@ ALTER SCHEMA public OWNER TO [DB_USER];
 
 ### 2. 환경 변수 설정 (.env)
 > [!IMPORTANT]
-> 이 브랜치(`feat/image-upload`)는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
+> 이 프로젝트는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
 
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
 
@@ -64,7 +69,7 @@ npx prisma db push
 2. **WSL 내에서 프로젝트 경로 이동 및 패키지 설치**
    마운트된 프로젝트 디렉토리로 이동한 뒤, 의존성 패키지를 최종 설치 및 정리합니다.
    ```bash
-   cd /mnt/e/workspace/agy_workspace/MaplibreBoardVervel
+   cd /home/pyeongju/workspace/MaplibreBoardVervel
    npm install
    ```
 
