@@ -27,9 +27,9 @@ export default async function handler(req, res) {
 
     if (method === 'POST') {
       // accept optional grid and center fields so clients can create boards tied to a grid
-      const { name, grid_x, grid_y, center_lng, center_lat, meta } = req.body || {}
-      const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat, meta)
-        VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat, meta`
+      const { name, grid_x, grid_y, center_lng, center_lat } = req.body || {}
+      const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat)
+        VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat`
       const params = [name || `board-${Date.now()}`,
         grid_x != null ? Number(grid_x) : null,
         grid_y != null ? Number(grid_y) : null,

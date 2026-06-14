@@ -26,6 +26,9 @@ export default function IndexPage() {
             <button onClick={() => window.location.href = '/map'} className="button primary">
               지도 보기 (Raster Map)
             </button>
+            <button onClick={() => window.location.href = '/all'} className="button secondary">
+              전체 글 피드 보기 (All Feed)
+            </button>
             <button onClick={() => window.location.href = '/admin'} className="button secondary">
               관리자 페이지로 이동
             </button>
