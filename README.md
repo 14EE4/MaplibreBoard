@@ -3,8 +3,6 @@
 ## 📝 프로젝트 요약
 Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입니다. **MapLibre GL**을 사용하여 그리드 단위로 보드를 시각화하며, **Prisma ORM**을 통해 로컬 서버에 직접 설치된 **PostgreSQL**에 데이터를 저장합니다. 외부 클라우드 의존성을 제거하고 독립적인 서버 환경에서 구동되도록 최적화되었습니다.
 
-추가로 마인크래프트 서버(Java & Bedrock 겸용) 상태 모니터링 기능을 제공하여 실시간으로 서버 접속 현황을 확인할 수 있습니다.
-
 ## 🌐 배포 및 접속 정보
 - **배포 주소:** [https://pyeong.p-e.kr](https://pyeong.p-e.kr)
 - **운영 환경:** Ubuntu (Linux) / Nginx (Reverse Proxy) / Node.js v24
@@ -31,6 +29,9 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
     ALTER SCHEMA public OWNER TO [DB_USER];
 
 ### 2. 환경 변수 설정 (.env)
+> [!IMPORTANT]
+> 이 브랜치(`feat/image-upload`)는 외부 DB를 사용하지 않고, **로컬 PostgreSQL DB**를 기본적으로 사용합니다.
+
 프로젝트 루트 폴더에 `.env` 파일을 생성하고 로컬 DB 주소를 입력합니다. (Git 제외 대상)
 
     DATABASE_URL="postgresql://[DB_USER]:[DB_PASSWORD]@localhost:5432/maplibre_db"
@@ -45,7 +46,36 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
     npx prisma generate
     npx prisma db push
 
-### 4. 빌드 및 서버 실행 (PM2)
+### 4. WSL (Ubuntu) 기반 로컬 테스트 및 검증
+데이터베이스(PostgreSQL)가 WSL 환경에 기동되어 있는 경우, 아래 가이드를 통해 기능을 테스트할 수 있습니다.
+
+1. **WSL 접속 및 PostgreSQL 실행**
+   Windows 터미널에서 WSL Ubuntu를 실행하고 아래 명령어로 데이터베이스 서비스를 켭니다.
+   ```bash
+   sudo service postgresql start
+   ```
+
+2. **WSL 내에서 프로젝트 경로 이동 및 패키지 설치**
+   마운트된 프로젝트 디렉토리로 이동한 뒤, 의존성 패키지를 최종 설치 및 정리합니다.
+   ```bash
+   cd /mnt/e/workspace/agy_workspace/MaplibreBoardVervel
+   npm install
+   ```
+
+3. **DB 테이블 스키마 동기화**
+   Prisma CLI를 통해 로컬 DB에 새로 추가된 컬럼(`image_url` 등)을 연동합니다.
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+4. **로컬 개발 서버 실행 및 브라우저 테스트**
+   ```bash
+   npm run dev
+   ```
+   서버가 켜지면 브라우저를 통해 `http://localhost:3000/board?id=1` 혹은 격자 좌표로 접속하여 이미지 첨부, 글 작성 및 이미지 확대(Lightbox) 동작을 검증할 수 있습니다.
+
+### 5. 빌드 및 배포 실행 (PM2)
     # 프로젝트 빌드
     npm run build
 
@@ -71,17 +101,9 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
 - **접근성:** 보드 ID 또는 그리드 좌표(X, Y) 쿼리 파라미터를 통한 유연한 페이지 접속
 - **즉시 반영:** 새 글 작성 후 캐시를 비우고 즉시 목록을 다시 불러와 페이지를 새로고침할 때 지연 없이 최신 글이 표시됨
 
-### 🎮 마인크래프트 서버 모니터링
-- **실시간 상태:** minecraft-server-util을 사용하여 서버 온/오프라인 상태 및 접속 인원 확인
-- **자동 갱신:** 30초 간격으로 자동 폴링하여 서버 상태를 최신으로 유지
-- **Java & Bedrock:** 자바 에디션과 베드락 에디션 모두 지원하는 서버 정보 제공
-- **BlueMap 연동:** 마인크래프트 맵 뷰어(BlueMap) 바로가기 제공
-
 ---
 
 ## 🏗 시스템 아키텍처
-
-
 
 - **Reverse Proxy:** Nginx가 80(HTTP)을 443(HTTPS)으로 리다이렉트하고 3000번 포트로 전달
 - **App Server:** Next.js (PM2로 프로세스 관리)
@@ -95,8 +117,8 @@ Next.js(Pages Router + API Routes) 기반의 인터랙티브 지도 게시판입
     ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
     ├── backup/            # 게시판 데이터 CSV 백업 (boards.csv, posts.csv)
     ├── pages/
-    │   ├── api/           # 보드/게시글 CRUD API 및 서버 상태 엔드포인트
-    │   ├── index.js       # 랜딩 페이지 (마인크래프트 서버 상태 표시)
+    │   ├── api/           # 보드/게시글 CRUD API
+    │   ├── index.js       # 랜딩 페이지
     │   ├── map.js         # 메인 지도 인터페이스
     │   ├── rasterMap2.js  # 래스터 지도 버전
     │   ├── board.js       # 게시판 및 CRUD 로직

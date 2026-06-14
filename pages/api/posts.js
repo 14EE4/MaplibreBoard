@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     }
 
     if (method === 'POST') {
-      const { board_id, author, content, password } = req.body
+      const { board_id, author, content, password, image_url } = req.body
       if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
 
       // hash password (SHA-256 hex) to be compatible with backend service
@@ -31,8 +31,8 @@ export default async function handler(req, res) {
       const client = await (await pool).connect()
       try {
         await client.query('BEGIN')
-        const insertSql = 'INSERT INTO posts (board_id, author, content, password) VALUES($1,$2,$3,$4) RETURNING *'
-        const insert = await client.query(insertSql, [board_id, author || null, content, hashed])
+        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url) VALUES($1,$2,$3,$4,$5) RETURNING *'
+        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
         return res.status(201).json(insert.rows[0])
