@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 const { query, pool } = require('../../../lib/db');
-
-const ADMIN_PASSWORD = '1q2w3e4r!';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD environment variable is not defined');
+}
 
 export default async function handler(req, res) {
   const { method } = req;
