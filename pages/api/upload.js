@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     const buffer = Buffer.from(base64Data, 'base64');
 
     // Target upload directory
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = path.join(process.cwd(), 'uploads');
     
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
