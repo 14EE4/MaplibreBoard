@@ -11,6 +11,10 @@ export default function AllFeedPage() {
   const [lightboxImage, setLightboxImage] = useState(null)
 
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '' })
+
+  const toastTimeoutRef = useRef(null)
+  const hasScrolledRef = useRef(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -123,8 +127,55 @@ export default function AllFeedPage() {
     }
   }, [posts])
 
+  const showToast = useCallback((msg) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setToast({ show: true, message: msg })
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast({ show: false, message: '' })
+    }, 3000)
+  }, [])
+
+  const handleShareClick = useCallback((postId, boardId) => {
+    if (!boardId) return
+    const postUrl = `${window.location.origin}/board?id=${boardId}#post-${postId}`
+    
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(postUrl)
+        .then(() => {
+          showToast('글 주소가 클립보드에 복사되었습니다.')
+        })
+        .catch(err => {
+          console.error('Failed to copy text using clipboard API: ', err)
+          fallbackCopyText(postUrl)
+        })
+    } else {
+      fallbackCopyText(postUrl)
+    }
+  }, [showToast])
+
+  const fallbackCopyText = useCallback((text) => {
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    textArea.style.position = 'fixed'
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      showToast('글 주소가 클립보드에 복사되었습니다.')
+    } catch (err) {
+      console.error('Fallback copy failed', err)
+      alert('주소 복사에 실패했습니다.')
+    }
+    document.body.removeChild(textArea)
+  }, [showToast])
+
   // Scroll to hash post if present
   useEffect(() => {
+    if (hasScrolledRef.current) return
+
     const handleHashChange = () => {
       const hash = window.location.hash
       if (hash && hash.startsWith('#post-')) {
@@ -144,6 +195,7 @@ export default function AllFeedPage() {
 
     if (posts.length > 0) {
       handleHashChange()
+      hasScrolledRef.current = true
     }
   }, [posts])
 
@@ -221,6 +273,17 @@ export default function AllFeedPage() {
                       📍 {post.board_name || '이름 없음'} 
                       {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
                     </span>
+                    <button 
+                      className="btn-share-post"
+                      title="글 주소 복사"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleShareClick(post.id, post.board_id)
+                      }}
+                    >
+                      공유
+                    </button>
                   </div>
                   <span className="post-date">{post.created_at ? formatTime(post.created_at) : ''}</span>
                 </div>
@@ -317,6 +380,12 @@ export default function AllFeedPage() {
       >
         ▲
       </button>
+
+      {/* 토스트 알림 */}
+      <div className={`toast-container ${toast.show ? 'show' : ''}`}>
+        <span className="toast-icon">✓</span>
+        <span>{toast.message}</span>
+      </div>
     </>
   )
 }
