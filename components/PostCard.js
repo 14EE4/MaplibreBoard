@@ -36,12 +36,19 @@ export default function PostCard({
 
       <div className="post-body">
         {isEditing ? (
-          <textarea 
-            className="textarea-field edit-textarea"
-            value={editing[post.id].value} 
-            onChange={ev => setEditing(prev => ({ ...prev, [post.id]: { editing: true, value: ev.target.value } }))} 
-            onKeyDown={ev => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(post.id); } }} 
-          />
+          <div className="textarea-container" style={{ position: 'relative' }}>
+            <textarea 
+              className="textarea-field edit-textarea"
+              value={editing[post.id].value} 
+              maxLength={1000}
+              onChange={ev => setEditing(prev => ({ ...prev, [post.id]: { editing: true, value: ev.target.value } }))} 
+              onKeyDown={ev => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(post.id); } }} 
+              style={{ paddingBottom: '30px' }}
+            />
+            <div className={`char-counter ${(editing[post.id].value || '').length >= 850 ? 'warning' : ''} ${(editing[post.id].value || '').length >= 1000 ? 'danger' : ''}`}>
+              {(editing[post.id].value || '').length} / 1000
+            </div>
+          </div>
         ) : (
           <>
             <p className="post-text">

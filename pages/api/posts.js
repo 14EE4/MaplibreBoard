@@ -40,6 +40,12 @@ export default async function handler(req, res) {
     if (method === 'POST') {
       const { board_id, author, content, password, image_url } = req.body
       if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
+      if (author && author.length > 20) {
+        return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
+      }
+      if (content && content.length > 1000) {
+        return res.status(400).json({ error: '내용은 최대 1000자까지 입력 가능합니다.' })
+      }
 
       // hash password (SHA-256 hex) to be compatible with backend service
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
@@ -64,6 +70,12 @@ export default async function handler(req, res) {
     if (method === 'PUT') {
       const { id, author, content, password } = req.body
       if (!id || !content) return res.status(400).json({ error: 'id and content required' })
+      if (author && author.length > 20) {
+        return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
+      }
+      if (content && content.length > 1000) {
+        return res.status(400).json({ error: '내용은 최대 1000자까지 입력 가능합니다.' })
+      }
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
       // Verify existing post password before updating to prevent unauthorized edits
