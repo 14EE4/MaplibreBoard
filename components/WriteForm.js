@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 export default function WriteForm({
   author,
@@ -14,6 +14,15 @@ export default function WriteForm({
   handleRemoveImage,
   submitPost
 }) {
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
+    }
+  }, [content])
+
   return (
     <div className="write-card">
       <h3>새 글 작성</h3>
@@ -29,6 +38,7 @@ export default function WriteForm({
         <div className="textarea-container" style={{ position: 'relative' }}>
           <textarea 
             id="content" 
+            ref={textareaRef}
             placeholder="따뜻한 한 마디를 적어보세요... (Ctrl+Enter로 즉시 전송)" 
             value={content} 
             maxLength={1000}

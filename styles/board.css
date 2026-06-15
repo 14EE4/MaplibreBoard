@@ -189,7 +189,8 @@ body {
   font-size: 15px;
   font-family: inherit;
   min-height: 110px;
-  resize: vertical;
+  resize: none;
+  overflow-y: hidden;
   transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;

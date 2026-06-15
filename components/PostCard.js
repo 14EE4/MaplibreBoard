@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { escapeHtml, formatTime } from '../lib/utils'
 import PostContent from './PostContent'
 
@@ -16,6 +16,15 @@ export default function PostCard({
   backlinks = []
 }) {
   const isEditing = editing[post.id]?.editing
+  const editValue = editing[post.id]?.value
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
+    }
+  }, [isEditing, editValue])
 
   return (
     <div id={`post-${post.id}`} className="post-card">
@@ -39,6 +48,7 @@ export default function PostCard({
           <div className="textarea-container" style={{ position: 'relative' }}>
             <textarea 
               className="textarea-field edit-textarea"
+              ref={textareaRef}
               value={editing[post.id].value} 
               maxLength={1000}
               onChange={ev => setEditing(prev => ({ ...prev, [post.id]: { editing: true, value: ev.target.value } }))} 
