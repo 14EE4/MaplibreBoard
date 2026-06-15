@@ -219,62 +219,39 @@ export default function MapPage() {
 
         // UI control
         const gridControl = document.createElement('div')
-        gridControl.style.position = 'absolute'
-        gridControl.style.top = '16px'
-        gridControl.style.right = '16px'
-        gridControl.style.background = 'rgba(17, 24, 39, 0.8)'
-        gridControl.style.backdropFilter = 'blur(8px)'
-        gridControl.style.webkitBackdropFilter = 'blur(8px)'
-        gridControl.style.border = '1px solid rgba(255, 255, 255, 0.08)'
-        gridControl.style.padding = '10px 16px'
-        gridControl.style.borderRadius = '12px'
-        gridControl.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
-        gridControl.style.fontFamily = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        gridControl.style.fontSize = '13px'
-        gridControl.style.color = '#f3f4f6'
-        gridControl.style.display = 'flex'
-        gridControl.style.alignItems = 'center'
-        gridControl.style.gap = '10px'
-        gridControl.style.zIndex = 9999
+        gridControl.className = 'map-grid-control'
 
-        const styleSelect = (selectEl) => {
-          selectEl.style.background = 'rgba(31, 41, 55, 0.6)'
-          selectEl.style.border = '1px solid rgba(255, 255, 255, 0.1)'
-          selectEl.style.color = '#f3f4f6'
-          selectEl.style.padding = '4px 8px'
-          selectEl.style.borderRadius = '6px'
-          selectEl.style.fontSize = '12px'
-          selectEl.style.fontFamily = 'inherit'
-          selectEl.style.outline = 'none'
-          selectEl.style.cursor = 'pointer'
-        }
-
+        const toggleGroup = document.createElement('div')
+        toggleGroup.className = 'control-group'
         const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = gridState.enabled; toggle.id = 'gridToggle'
-        toggle.style.cursor = 'pointer'
         const label = document.createElement('label'); label.htmlFor = 'gridToggle'; label.textContent = 'Grid'
-        label.style.cursor = 'pointer'
-        label.style.fontWeight = '500'
+        toggleGroup.appendChild(toggle)
+        toggleGroup.appendChild(label)
 
-        // map mode selector
-        const modeSelect = document.createElement('select')
-        ;['osm','sat','globe'].forEach(function(m){ const o = document.createElement('option'); o.value = m; o.text = (m==='osm'?'OpenStreetMap':m==='sat'?'Satellite':'Globe (vector)'); modeSelect.appendChild(o) })
-        styleSelect(modeSelect)
-        try { if (currentMode) modeSelect.value = currentMode } catch(e){}
-        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'
-        modeLabel.style.fontWeight = '500'
-
+        const sizeGroup = document.createElement('div')
+        sizeGroup.className = 'control-group'
+        const sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'
         const sizeSelect = document.createElement('select')
         const sizes = [0.25, 0.5, 1, 2, 5, 10, 20]
         sizes.forEach(function(s){ const opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); })
-        styleSelect(sizeSelect)
-        const sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'
-        sizeLabel.style.fontWeight = '500'
         sizeSelect.value = gridState.sizeDeg
         sizeSelect.disabled = true
-        sizeSelect.style.opacity = '0.6'
-        sizeSelect.style.cursor = 'not-allowed'
+        sizeGroup.appendChild(sizeLabel)
+        sizeGroup.appendChild(sizeSelect)
 
-        gridControl.appendChild(toggle); gridControl.appendChild(label); gridControl.appendChild(sizeLabel); gridControl.appendChild(sizeSelect); gridControl.appendChild(modeLabel); gridControl.appendChild(modeSelect)
+        const modeGroup = document.createElement('div')
+        modeGroup.className = 'control-group'
+        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'
+        const modeSelect = document.createElement('select')
+        ;['osm','sat','globe'].forEach(function(m){ const o = document.createElement('option'); o.value = m; o.text = (m==='osm'?'OpenStreetMap':m==='sat'?'Satellite':'Globe (vector)'); modeSelect.appendChild(o) })
+        try { if (currentMode) modeSelect.value = currentMode } catch(e){}
+        modeGroup.appendChild(modeLabel)
+        modeGroup.appendChild(modeSelect)
+
+        gridControl.appendChild(toggleGroup)
+        gridControl.appendChild(sizeGroup)
+        gridControl.appendChild(modeGroup)
+
         // append to map container
         const mapContainer = document.getElementById('map-container') || document.body
         mapContainer.appendChild(gridControl)
@@ -303,6 +280,73 @@ export default function MapPage() {
           .popup-input button { margin-right: 6px; }
           .popup-note p { margin: 6px 0 0 0; }
           .popup-meta { font-size: 11px; color: #666; margin-top:6px; }
+
+          .map-grid-control {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 9999;
+            box-sizing: border-box;
+          }
+          .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+          }
+          .control-group label {
+            cursor: pointer;
+          }
+          .control-group input[type="checkbox"] {
+            cursor: pointer;
+          }
+          .map-grid-control select {
+            background: rgba(31, 41, 55, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            box-sizing: border-box;
+          }
+          .map-grid-control select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+          .map-grid-control label, .map-grid-control span {
+            font-weight: 500;
+          }
+          @media (max-width: 600px) {
+            .map-grid-control {
+              top: 12px;
+              right: 12px;
+              left: 12px;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              padding: 10px 12px;
+              gap: 8px;
+            }
+            .control-group {
+              flex: 1 1 auto;
+              justify-content: center;
+            }
+          }
         `}</style>
       </Head>
       <div id="map-container" style={{ height: '100vh' }}>
