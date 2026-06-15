@@ -2,6 +2,8 @@ import Head from 'next/head'
 import '../styles/globals.css'
 import '../styles/board.css'
 import '../styles/all.css'
+import '../styles/admin.css'
+import '../styles/index.css'
 
 export default function MyApp({ Component, pageProps }) {
   return (
