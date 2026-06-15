@@ -61,14 +61,14 @@ export default function PostCard({
           </div>
         ) : (
           <>
-            <p className="post-text">
+            <p className={`post-text ${post.content === '(이 글은 삭제되었습니다)' ? 'deleted-post-text' : ''}`}>
               <PostContent 
                 content={post.content} 
                 onCitationClick={onCitationClick} 
                 onCitationHover={onCitationHover} 
               />
             </p>
-            {post.image_url && (
+            {post.image_url && post.image_url !== 'censored' && (
               <div className="post-image-container">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
@@ -77,6 +77,11 @@ export default function PostCard({
                   onClick={() => setLightboxImage(post.image_url)}
                   className="post-image"
                 />
+              </div>
+            )}
+            {post.image_url === 'censored' && (
+              <div className="censored-image-box">
+                🚫 이미지 검열됨
               </div>
             )}
             
@@ -105,33 +110,35 @@ export default function PostCard({
         )}
       </div>
 
-      <div className="post-actions-panel">
-        <input 
-          id={`pwd-${post.id}`} 
-          type="password" 
-          placeholder="비밀번호" 
-          maxLength={4} 
-          className="input-field pwd-action-field"
-          onKeyDown={ev => { 
-            if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { 
-              ev.preventDefault(); 
-              if (isEditing) { saveEdit(post.id); } else { verifyAndEdit(post.id); } 
-            } 
-          }} 
-        />
-        
-        {isEditing ? (
-          <div className="action-buttons">
-            <button onClick={() => saveEdit(post.id)} className="btn btn-primary btn-sm mr-2">저장</button>
-            <button onClick={() => setEditing(e => { const copy = { ...e }; delete copy[post.id]; return copy })} className="btn btn-secondary btn-sm">취소</button>
-          </div>
-        ) : (
-          <div className="action-buttons">
-            <button onClick={() => verifyAndEdit(post.id)} className="btn btn-secondary btn-sm mr-2">수정</button>
-            <button onClick={() => deletePost(post.id)} className="btn btn-danger-outline btn-sm">삭제</button>
-          </div>
-        )}
-      </div>
+      {post.content !== '(이 글은 삭제되었습니다)' && (
+        <div className="post-actions-panel">
+          <input 
+            id={`pwd-${post.id}`} 
+            type="password" 
+            placeholder="비밀번호" 
+            maxLength={4} 
+            className="input-field pwd-action-field"
+            onKeyDown={ev => { 
+              if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { 
+                ev.preventDefault(); 
+                if (isEditing) { saveEdit(post.id); } else { verifyAndEdit(post.id); } 
+              } 
+            }} 
+          />
+          
+          {isEditing ? (
+            <div className="action-buttons">
+              <button onClick={() => saveEdit(post.id)} className="btn btn-primary btn-sm mr-2">저장</button>
+              <button onClick={() => setEditing(e => { const copy = { ...e }; delete copy[post.id]; return copy })} className="btn btn-secondary btn-sm">취소</button>
+            </div>
+          ) : (
+            <div className="action-buttons">
+              <button onClick={() => verifyAndEdit(post.id)} className="btn btn-secondary btn-sm mr-2">수정</button>
+              <button onClick={() => deletePost(post.id)} className="btn btn-danger-outline btn-sm">삭제</button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

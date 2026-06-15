@@ -90,8 +90,11 @@ export default async function handler(req, res) {
         try {
           await client.query('BEGIN');
           for (const post of postsResult.rows) {
-            // Delete post record
-            await client.query('DELETE FROM posts WHERE id = $1', [post.id]);
+            // Soft-delete post record by updating content and clearing sensitive info
+            await client.query(
+              "UPDATE posts SET content = '(이 글은 삭제되었습니다)', author = NULL, password = NULL, image_url = NULL, updated_at = now() WHERE id = $1",
+              [post.id]
+            );
             // Decrement posts count in board
             await client.query(
               'UPDATE boards SET posts_count = GREATEST(posts_count - 1, 0) WHERE id = $1',
@@ -111,19 +114,19 @@ export default async function handler(req, res) {
           client.release();
         }
 
-        return res.status(200).json({ success: true, message: 'Post and image file deleted' });
+        return res.status(200).json({ success: true, message: 'Post updated to deleted and image file deleted' });
       }
 
       if (action === 'clear-image-only') {
-        // Clear image_url reference in posts
-        await query('UPDATE posts SET image_url = NULL WHERE image_url = $1', [imageUrl]);
+        // Set image_url reference to 'censored' in posts
+        await query("UPDATE posts SET image_url = 'censored' WHERE image_url = $1", [imageUrl]);
 
         // Delete the physical file
         if (fs.existsSync(filePath)) {
           await fs.promises.unlink(filePath);
         }
 
-        return res.status(200).json({ success: true, message: 'Image reference cleared and file deleted' });
+        return res.status(200).json({ success: true, message: 'Image reference updated to censored and file deleted' });
       }
 
       if (action === 'delete-file') {

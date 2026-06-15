@@ -229,7 +229,7 @@ export default function AllFeedPage() {
                   <p className="post-author">
                     작성자: <span className="author-name">{post.author ? escapeHtml(post.author) : '익명'}</span>
                   </p>
-                  <p className="post-content">
+                  <p className={`post-content ${post.content === '(이 글은 삭제되었습니다)' ? 'deleted-post-text' : ''}`}>
                     <PostContent
                       content={post.content}
                       onCitationClick={handleCitationClick}
@@ -258,7 +258,7 @@ export default function AllFeedPage() {
                       ))}
                     </div>
                   )}
-                  {post.image_url && (
+                  {post.image_url && post.image_url !== 'censored' && (
                     <div className="image-container">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -270,6 +270,11 @@ export default function AllFeedPage() {
                           setLightboxImage(post.image_url)
                         }}
                       />
+                    </div>
+                  )}
+                  {post.image_url === 'censored' && (
+                    <div className="censored-image-box" onClick={(e) => e.stopPropagation()}>
+                      🚫 이미지 검열됨
                     </div>
                   )}
                 </div>
