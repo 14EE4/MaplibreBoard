@@ -46,6 +46,24 @@ export default function Board() {
   const [lightboxImage, setLightboxImage] = useState(null)
   const [imageError, setImageError] = useState(null)
 
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowScrollTop(true)
+      } else {
+        setShowScrollTop(false)
+      }
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   // Preview popover states
   const [previewPost, setPreviewPost] = useState(null)
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
@@ -586,6 +604,15 @@ export default function Board() {
         loading={previewLoading}
         error={previewError}
       />
+
+      {/* 맨 위로 이동 버튼 */}
+      <button 
+        onClick={scrollToTop} 
+        className={`scroll-to-top ${showScrollTop ? 'visible' : ''}`}
+        aria-label="맨 위로 이동"
+      >
+        ▲
+      </button>
     </>
   )
 }
