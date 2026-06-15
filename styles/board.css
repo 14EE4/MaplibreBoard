@@ -634,3 +634,25 @@ body {
 .scroll-to-top:active {
   transform: translateY(0);
 }
+
+/* Deleted and Censored Post UI */
+.deleted-post-text {
+  color: #9ca3af !important;
+  font-style: italic;
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+.censored-image-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px dashed rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
