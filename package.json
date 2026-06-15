@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "migrate": "node scripts/migrate.js"
+    "start": "next start"
   },
   "dependencies": {
     "next": "16.1.3",

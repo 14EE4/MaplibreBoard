@@ -1,6 +1,13 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
+import { loadHeic2Any, compressImage } from '../lib/imageUtils'
+import { escapeHtml, formatTime } from '../lib/utils'
+import BoardSidebar from '../components/BoardSidebar'
+import WriteForm from '../components/WriteForm'
+import PostCard from '../components/PostCard'
+import Lightbox from '../components/Lightbox'
+import PostPreview from '../components/PostPreview'
 
 export default function Board() {
   const router = useRouter()
@@ -39,71 +46,137 @@ export default function Board() {
   const [lightboxImage, setLightboxImage] = useState(null)
   const [imageError, setImageError] = useState(null)
 
-  const loadHeic2Any = () => {
-    return new Promise((resolve, reject) => {
-      if (window.heic2any) {
-        resolve(window.heic2any)
-        return
+  // Preview popover states
+  const [previewPost, setPreviewPost] = useState(null)
+  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState(null)
+  const hoverTimeoutRef = useRef(null)
+
+  // Memoize backlinks map: targetPostId -> array of citing posts info
+  const backlinksMap = useMemo(() => {
+    const map = {}
+    posts.forEach(p => {
+      if (!p.content) return
+      const matches = p.content.match(/(?:>>|@)\d+/g)
+      if (matches) {
+        const uniqueTargets = [...new Set(matches.map(m => m.replace(/^>>|^@/, '')))]
+        uniqueTargets.forEach(targetId => {
+          if (!map[targetId]) map[targetId] = []
+          map[targetId].push({ id: p.id, author: p.author, board_id: p.board_id })
+        })
       }
-      const script = document.createElement('script')
-      script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js'
-      script.onload = () => {
-        if (window.heic2any) {
-          resolve(window.heic2any)
-        } else {
-          reject(new Error('heic2any 라이브러리를 로드하지 못했습니다.'))
-        }
-      }
-      script.onerror = () => {
-        reject(new Error('HEIC 변환 라이브러리(heic2any) 로드 중 오류가 발생했습니다.'))
-      }
-      document.head.appendChild(script)
     })
-  }
+    return map
+  }, [posts])
 
-  const compressImage = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const img = new Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const MAX_WIDTH = 1280
-          const MAX_HEIGHT = 1280
-          let width = img.width
-          let height = img.height
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width
-              width = MAX_WIDTH
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height
-              height = MAX_HEIGHT
-            }
+  // Citation Click: scroll to post, highlight, or fetch & redirect if other board
+  const handleCitationClick = useCallback((targetId) => {
+    const element = document.getElementById(`post-${targetId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      element.classList.add('highlight-flash')
+      setTimeout(() => {
+        element.classList.remove('highlight-flash')
+      }, 2000)
+    } else {
+      fetch(`/api/posts?id=${targetId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('존재하지 않는 게시글입니다.')
+          return res.json()
+        })
+        .then(post => {
+          if (post.board_id) {
+            window.location.href = `/board?id=${post.board_id}#post-${post.id}`
           }
+        })
+        .catch(err => {
+          alert(err.message)
+        })
+    }
+  }, [])
 
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          ctx.drawImage(img, 0, 0, width, height)
+  // Citation Hover: show floating popover preview card
+  const handleCitationHover = useCallback((e, targetId) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
 
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
-          resolve(dataUrl)
-        }
-        img.onerror = () => {
-          reject(new Error('이미지 로드에 실패했습니다.'))
-        }
-        img.src = event.target.result
-      }
-      reader.onerror = () => {
-        reject(new Error('파일 읽기에 실패했습니다.'))
-      }
-      reader.readAsDataURL(file)
+    if (!e) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setPreviewPost(null)
+        setPreviewError(null)
+        setPreviewLoading(false)
+      }, 100)
+      return
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(160, Math.min(window.innerWidth - 160, rect.left + rect.width / 2))
+    const y = rect.top + window.scrollY
+
+    setPreviewPosition({ x, y })
+    setPreviewLoading(true)
+    setPreviewError(null)
+
+    const foundPost = posts.find(p => String(p.id) === String(targetId))
+    if (foundPost) {
+      setPreviewPost(foundPost)
+      setPreviewLoading(false)
+    } else {
+      fetch(`/api/posts?id=${targetId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('게시글을 찾을 수 없습니다.')
+          return res.json()
+        })
+        .then(data => {
+          setPreviewPost(data)
+          setPreviewLoading(false)
+        })
+        .catch(err => {
+          setPreviewError(err.message || '게시글 조회 중 오류가 발생했습니다.')
+          setPreviewLoading(false)
+        })
+    }
+  }, [posts])
+
+  // Click post number to auto-insert reference text into textarea
+  const handlePostNumberClick = useCallback((postId) => {
+    setContent(prev => {
+      const trimmed = prev.trim()
+      return trimmed ? `${trimmed}\n>>${postId} ` : `>>${postId} `
     })
-  }
+    setTimeout(() => {
+      document.getElementById('content')?.focus()
+    }, 50)
+  }, [])
+
+  // Auto scroll and highlight if hash contains post ID on load
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash && hash.startsWith('#post-')) {
+        const postId = hash.replace('#post-', '')
+        setTimeout(() => {
+          const element = document.getElementById(`post-${postId}`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            element.classList.add('highlight-flash')
+            setTimeout(() => {
+              element.classList.remove('highlight-flash')
+            }, 2000)
+          }
+        }, 300)
+      }
+    }
+
+    if (posts.length > 0) {
+      handleHashChange()
+    }
+  }, [posts])
+
+
 
   const handleFileChange = async (e) => {
     let file = e.target.files[0]
@@ -163,20 +236,7 @@ export default function Board() {
     if (fileInput) fileInput.value = ''
   }
 
-  const escapeHtml = (str) => {
-    if (!str) return ''
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-  }
 
-  const formatTime = (ts) => {
-    if (!ts) return ''
-    try { return new Date(ts).toLocaleString() } catch (e) { return ts }
-  }
 
   const loadPosts = useCallback(async (boardId) => {
     if (!boardId) return
@@ -451,149 +511,34 @@ export default function Board() {
         </header>
 
         <div className="board-layout">
-          {/* Left Column: Board Metadata */}
-          <aside className="board-sidebar">
-            <div className="sidebar-card">
-              <h2>게시판 정보</h2>
-              <div className="meta-info-text">{metaText}</div>
-              
-              {boardMeta ? (
-                <div className="meta-details">
-                  <div className="meta-row">
-                    <span className="meta-label">보드 ID</span>
-                    <span className="meta-val">{resolvedBoardId || boardMeta.id || '(알 수 없음)'}</span>
-                  </div>
-                  <div className="meta-row">
-                    <span className="meta-label">보드 이름</span>
-                    <span className="meta-val highlight-text">{boardMeta.name || '(이름 없음)'}</span>
-                  </div>
-                  {((boardMeta.grid_x != null) || (boardMeta.x != null)) && (
-                    <div className="meta-row">
-                      <span className="meta-label">격자 좌표</span>
-                      <span className="meta-val">({(boardMeta.grid_x != null) ? boardMeta.grid_x : boardMeta.x}, {(boardMeta.grid_y != null) ? boardMeta.grid_y : boardMeta.y})</span>
-                    </div>
-                  )}
-                  {((boardMeta.posts_count != null) || (boardMeta.count != null)) && (
-                    <div className="meta-row">
-                      <span className="meta-label">게시물 수</span>
-                      <span className="meta-val badge-count">{(boardMeta.posts_count != null) ? boardMeta.posts_count : boardMeta.count}개</span>
-                    </div>
-                  )}
-                  {((boardMeta.center_lng != null) || (boardMeta.lng != null)) && (
-                    <div className="meta-row">
-                      <span className="meta-label">중심 좌표</span>
-                      <span className="meta-val">
-                        {((boardMeta.center_lng != null) ? boardMeta.center_lng : boardMeta.lng).toFixed(4)}, {((boardMeta.center_lat != null) ? boardMeta.center_lat : boardMeta.lat).toFixed(4)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                !loading && (
-                  <div className="empty-board-setup">
-                    <p>현재 격자에 활성화된 게시판 보드가 없거나 아직 데이터베이스에 등록되어 있지 않습니다.</p>
-                    <div className="setup-buttons">
-                      <button onClick={() => createBoardAndOpen()} className="btn btn-primary btn-sm btn-full mb-2">
-                        기본 보드 생성 및 열기
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const name = (typeof window !== 'undefined' && typeof window.prompt === 'function') 
-                            ? window.prompt('생성할 보드 이름을 입력하세요', '새 보드') 
-                            : null
-                          createBoardAndOpen(name)
-                        }} 
-                        className="btn btn-secondary btn-sm btn-full"
-                      >
-                        이름 직접 지정하여 생성
-                      </button>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="info-helper-box">
-              <p>💡 <strong>안내:</strong> 격자별 좌표(X, Y) 쿼리 파라미터를 통해 페이지로 다이렉트 접근이 가능합니다.</p>
-              <code>예: /board?grid_x=61&grid_y=25</code>
-            </div>
-          </aside>
+          {/* Left Column: Board Sidebar */}
+          <BoardSidebar
+            boardMeta={boardMeta}
+            resolvedBoardId={resolvedBoardId}
+            metaText={metaText}
+            loading={loading}
+            createBoardAndOpen={createBoardAndOpen}
+          />
 
           {/* Right Column: Feed and Writing Form */}
           <section className="board-main-content">
             {boardMeta && (
               <>
                 {/* Write Post Card */}
-                <div className="write-card">
-                  <h3>새 글 작성</h3>
-                  <div className="write-form">
-                    <input 
-                      id="author" 
-                      placeholder="작성자 닉네임 (선택)" 
-                      value={author} 
-                      onChange={e => setAuthor(e.target.value)} 
-                      className="input-field" 
-                    />
-                    <textarea 
-                      id="content" 
-                      placeholder="따뜻한 한 마디를 적어보세요... (Ctrl+Enter로 즉시 전송)" 
-                      value={content} 
-                      onChange={e => setContent(e.target.value)} 
-                      onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
-                      className="textarea-field"
-                    />
-
-                    {/* Image Upload Area */}
-                    <div className="upload-wrapper" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
-                        <button 
-                          type="button" 
-                          onClick={() => document.getElementById('imageInput')?.click()}
-                          disabled={loading}
-                          className="btn btn-secondary btn-sm upload-btn"
-                        >
-                          📷 사진 첨부하기
-                        </button>
-                        <input id="imageInput" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                        
-                        {imagePreview && (
-                          <div className="image-preview-box">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={imagePreview} alt="업로드 미리보기" className="preview-img" />
-                            <button onClick={handleRemoveImage} className="remove-preview-btn" title="사진 제거">
-                              ✕
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      {imageError && (
-                        <div className="upload-error-msg" style={{ color: '#ef4444', fontSize: '13px', margin: '4px 0 0 0' }}>
-                          ⚠️ {imageError}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="form-footer">
-                      <div className="pwd-input-group">
-                        <input 
-                          id="postPassword" 
-                          type="password"
-                          placeholder="수정용 비밀번호 (선택)" 
-                          maxLength={4} 
-                          value={postPassword} 
-                          onChange={e => setPostPassword(e.target.value)} 
-                          onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
-                          className="input-field pwd-field" 
-                        />
-                        <span className="pwd-helper">* 입력 시 추후 수정/삭제 가능</span>
-                      </div>
-                      
-                      <button id="submitPost" onClick={submitPost} disabled={loading} className="btn btn-primary">
-                        {loading ? '전송 중...' : '게시글 등록'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <WriteForm
+                  author={author}
+                  setAuthor={setAuthor}
+                  content={content}
+                  setContent={setContent}
+                  postPassword={postPassword}
+                  setPostPassword={setPostPassword}
+                  imagePreview={imagePreview}
+                  imageError={imageError}
+                  loading={loading}
+                  handleFileChange={handleFileChange}
+                  handleRemoveImage={handleRemoveImage}
+                  submitPost={submitPost}
+                />
 
                 {/* Posts Timeline List */}
                 <div className="posts-timeline">
@@ -608,66 +553,20 @@ export default function Board() {
 
                   <div className="posts-list">
                     {posts.map(p => (
-                      <div key={p.id} className="post-card">
-                        <div className="post-header">
-                          <span className="post-author">{p.author ? escapeHtml(p.author) : '익명'}</span>
-                          <span className="post-date">{p.created_at ? formatTime(p.created_at) : ''}</span>
-                        </div>
-
-                        <div className="post-body">
-                          {editing[p.id] && editing[p.id].editing ? (
-                            <textarea 
-                              className="textarea-field edit-textarea"
-                              value={editing[p.id].value} 
-                              onChange={ev => setEditing(prev => ({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} 
-                              onKeyDown={ev => { if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(p.id); } }} 
-                            />
-                          ) : (
-                            <>
-                              <p className="post-text" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
-                              {p.image_url && (
-                                <div className="post-image-container">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img 
-                                    src={p.image_url} 
-                                    alt="첨부 이미지" 
-                                    onClick={() => setLightboxImage(p.image_url)}
-                                    className="post-image"
-                                  />
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-
-                        <div className="post-actions-panel">
-                          <input 
-                            id={`pwd-${p.id}`} 
-                            type="password" 
-                            placeholder="비밀번호" 
-                            maxLength={4} 
-                            className="input-field pwd-action-field"
-                            onKeyDown={ev => { 
-                              if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { 
-                                ev.preventDefault(); 
-                                if (editing[p.id] && editing[p.id].editing) { saveEdit(p.id); } else { verifyAndEdit(p.id); } 
-                              } 
-                            }} 
-                          />
-                          
-                          {editing[p.id] && editing[p.id].editing ? (
-                            <div className="action-buttons">
-                              <button onClick={() => saveEdit(p.id)} className="btn btn-primary btn-sm mr-2">저장</button>
-                              <button onClick={() => setEditing(e => { const c = { ...e }; delete c[p.id]; return c })} className="btn btn-secondary btn-sm">취소</button>
-                            </div>
-                          ) : (
-                            <div className="action-buttons">
-                              <button onClick={() => verifyAndEdit(p.id)} className="btn btn-secondary btn-sm mr-2">수정</button>
-                              <button onClick={() => deletePost(p.id)} className="btn btn-danger-outline btn-sm">삭제</button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <PostCard
+                        key={p.id}
+                        post={p}
+                        editing={editing}
+                        setEditing={setEditing}
+                        setLightboxImage={setLightboxImage}
+                        verifyAndEdit={verifyAndEdit}
+                        saveEdit={saveEdit}
+                        deletePost={deletePost}
+                        onCitationClick={handleCitationClick}
+                        onCitationHover={handleCitationHover}
+                        onPostNumberClick={handlePostNumberClick}
+                        backlinks={backlinksMap[p.id]}
+                      />
                     ))}
                   </div>
                 </div>
@@ -678,568 +577,15 @@ export default function Board() {
       </main>
 
       {/* 라이트박스 모달 뷰어 */}
-      {lightboxImage && (
-        <div 
-          onClick={() => setLightboxImage(null)}
-          className="lightbox-overlay"
-        >
-          <div className="lightbox-wrapper">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={lightboxImage} 
-              alt="확대 이미지" 
-              className="lightbox-img"
-            />
-            <button 
-              onClick={(e) => { e.stopPropagation(); setLightboxImage(null); }}
-              className="lightbox-close-btn"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
-
-      <style jsx global>{`
-        body {
-          background-color: #0b0f19;
-          color: #f3f4f6;
-          font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          margin: 0;
-          padding: 0;
-        }
-        
-        .board-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 40px 24px;
-        }
-
-        .board-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 32px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          padding-bottom: 24px;
-        }
-
-        .header-brand h1 {
-          font-size: 24px;
-          font-weight: 700;
-          margin: 0;
-          background: linear-gradient(135deg, #60a5fa, #3b82f6);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        /* Two-column layout */
-        .board-layout {
-          display: grid;
-          grid-template-columns: 320px 1fr;
-          gap: 32px;
-        }
-
-        @media (max-width: 900px) {
-          .board-layout {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (max-width: 600px) {
-          .board-header {
-            flex-direction: column-reverse;
-            align-items: flex-start;
-            gap: 12px;
-          }
-          .form-footer {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 12px;
-          }
-          .pwd-field {
-            width: 100% !important;
-          }
-          .form-footer .btn {
-            width: 100%;
-          }
-        }
-
-        /* Sidebar Styling */
-        .sidebar-card {
-          background: rgba(17, 24, 39, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 20px;
-        }
-
-        .sidebar-card h2 {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0 0 20px 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          padding-bottom: 12px;
-        }
-
-        .meta-info-text {
-          color: #9ca3af;
-          font-size: 13px;
-          margin-bottom: 12px;
-        }
-
-        .meta-details {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-
-        .meta-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 14px;
-        }
-
-        .meta-label {
-          color: #9ca3af;
-        }
-
-        .meta-val {
-          color: #f3f4f6;
-          font-weight: 600;
-        }
-
-        .highlight-text {
-          color: #60a5fa;
-        }
-
-        .badge-count {
-          background: rgba(96, 165, 250, 0.1);
-          color: #60a5fa;
-          padding: 2px 8px;
-          border-radius: 6px;
-        }
-
-        .info-helper-box {
-          background: rgba(245, 158, 11, 0.05);
-          border: 1px solid rgba(245, 158, 11, 0.15);
-          border-radius: 12px;
-          padding: 16px;
-          font-size: 13px;
-          color: #fcd34d;
-        }
-
-        .info-helper-box p {
-          margin: 0 0 8px 0;
-        }
-
-        .info-helper-box code {
-          background: rgba(0, 0, 0, 0.25);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-family: monospace;
-          color: #f59e0b;
-        }
-
-        /* Form & Content Area */
-        .write-card {
-          background: rgba(17, 24, 39, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 16px;
-          padding: 28px;
-          margin-bottom: 32px;
-        }
-
-        .write-card h3 {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0 0 20px 0;
-        }
-
-        .write-form {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .input-field {
-          background: rgba(31, 41, 55, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 8px;
-          color: #f3f4f6;
-          padding: 12px 16px;
-          font-size: 15px;
-          font-family: inherit;
-          transition: all 0.2s ease;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .input-field:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-          background: rgba(31, 41, 55, 0.7);
-        }
-
-        .textarea-field {
-          background: rgba(31, 41, 55, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 8px;
-          color: #f3f4f6;
-          padding: 14px 16px;
-          font-size: 15px;
-          font-family: inherit;
-          min-height: 110px;
-          resize: vertical;
-          transition: all 0.2s ease;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .textarea-field:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-          background: rgba(31, 41, 55, 0.7);
-        }
-
-        /* Upload Area */
-        .upload-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          margin-top: 4px;
-        }
-
-        .upload-btn {
-          cursor: pointer;
-        }
-
-        .image-preview-box {
-          position: relative;
-          display: inline-block;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          overflow: hidden;
-          background: #111827;
-        }
-
-        .preview-img {
-          max-width: 160px;
-          max-height: 110px;
-          display: block;
-          object-fit: cover;
-        }
-
-        .remove-preview-btn {
-          position: absolute;
-          top: 6px;
-          right: 6px;
-          background: rgba(0, 0, 0, 0.6);
-          color: white;
-          border: none;
-          border-radius: 50%;
-          width: 22px;
-          height: 22px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 10px;
-          font-weight: bold;
-          transition: background-color 0.2s;
-        }
-
-        .remove-preview-btn:hover {
-          background: #ef4444;
-        }
-
-        .form-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 16px;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          padding-top: 16px;
-        }
-
-        .pwd-input-group {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .pwd-field {
-          width: 190px !important;
-          padding: 8px 12px;
-          font-size: 13px;
-        }
-
-        .pwd-helper {
-          color: #6b7280;
-          font-size: 11px;
-        }
-
-        /* Timeline / Cards feed */
-        .posts-timeline {
-          background: rgba(17, 24, 39, 0.25);
-          border: 1px solid rgba(255, 255, 255, 0.03);
-          border-radius: 16px;
-          padding: 28px;
-        }
-
-        .posts-timeline h3 {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0 0 20px 0;
-        }
-
-        .timeline-state {
-          text-align: center;
-          padding: 32px;
-          color: #9ca3af;
-        }
-
-        .empty-timeline {
-          text-align: center;
-          padding: 60px 24px;
-          color: #9ca3af;
-          border: 1px dashed rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-        }
-
-        .posts-list {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .post-card {
-          background: rgba(31, 41, 55, 0.35);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-          transition: border-color 0.2s;
-        }
-
-        .post-card:hover {
-          border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .post-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 13px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-          padding-bottom: 8px;
-        }
-
-        .post-author {
-          font-weight: 600;
-          color: #60a5fa;
-        }
-
-        .post-date {
-          color: #6b7280;
-        }
-
-        .post-body {
-          font-size: 15px;
-          line-height: 1.5;
-          color: #e5e7eb;
-        }
-
-        .post-text {
-          margin: 0;
-          word-break: break-all;
-        }
-
-        .post-image-container {
-          margin-top: 12px;
-          display: inline-block;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          background: #111827;
-        }
-
-        .post-image {
-          max-width: 100%;
-          max-height: 260px;
-          object-fit: contain;
-          display: block;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }
-
-        .post-image:hover {
-          transform: scale(1.01);
-        }
-
-        /* Post Editing and Action buttons */
-        .edit-textarea {
-          font-size: 14px;
-          min-height: 90px;
-        }
-
-        .post-actions-panel {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-top: 1px solid rgba(255, 255, 255, 0.03);
-          padding-top: 12px;
-        }
-
-        .pwd-action-field {
-          width: 120px !important;
-          padding: 6px 10px;
-          font-size: 12px;
-        }
-
-        .action-buttons {
-          display: flex;
-        }
-
-        /* Buttons styles (Global match) */
-        .btn {
-          font-family: inherit;
-          padding: 10px 20px;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          box-sizing: border-box;
-          white-space: nowrap;
-        }
-
-        .btn-sm {
-          padding: 6px 12px;
-          font-size: 12px;
-          border-radius: 6px;
-        }
-
-        .btn-primary {
-          background: #3b82f6;
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background: #2563eb;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-secondary {
-          background: rgba(255, 255, 255, 0.08);
-          color: #e5e7eb;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .btn-secondary:hover {
-          background: rgba(255, 255, 255, 0.15);
-          color: white;
-        }
-
-        .btn-danger-outline {
-          background: none;
-          border: 1px solid rgba(239, 68, 68, 0.4);
-          color: #f87171;
-        }
-
-        .btn-danger-outline:hover {
-          background: rgba(239, 68, 68, 0.1);
-          border-color: #ef4444;
-          color: white;
-        }
-
-        .btn-full {
-          width: 100%;
-        }
-
-        .empty-board-setup {
-          font-size: 13px;
-          color: #9ca3af;
-          line-height: 1.5;
-        }
-
-        .setup-buttons {
-          margin-top: 16px;
-        }
-
-        .mb-2 {
-          margin-bottom: 8px;
-        }
-
-        .ml-2 {
-          margin-left: 8px;
-        }
-        
-        .mr-2 {
-          margin-right: 8px;
-        }
-
-        /* Lightbox styles */
-        .lightbox-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.85);
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .lightbox-wrapper {
-          position: relative;
-          max-width: 90%;
-          max-height: 90%;
-        }
-
-        .lightbox-img {
-          max-width: 100%;
-          max-height: 90vh;
-          border-radius: 8px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-          display: block;
-          margin: auto;
-        }
-
-        .lightbox-close-btn {
-          position: absolute;
-          top: -44px;
-          right: 0;
-          background: transparent;
-          color: #fff;
-          border: none;
-          font-size: 32px;
-          cursor: pointer;
-          font-weight: 300;
-          transition: color 0.2s;
-        }
-
-        .lightbox-close-btn:hover {
-          color: #ef4444;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
+      <Lightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
+
+      {/* 글 미리보기 팝오버 */}
+      <PostPreview 
+        post={previewPost}
+        position={previewPosition}
+        loading={previewLoading}
+        error={previewError}
+      />
     </>
   )
 }

@@ -13,7 +13,7 @@ function waitForMaplibre(timeout = 5000) {
   })
 }
 
-export default function RasterMap2() {
+export default function MapPage() {
   useEffect(() => {
     let map = null
     let mounted = true
