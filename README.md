@@ -199,7 +199,7 @@ pm2 startup
     MaplibreBoard/
     ├── prisma/            # DB 모델(schema.prisma)
     ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
-    ├── backup/            # 게시판 데이터 CSV 백업 (boards.csv, posts.csv)
+    ├── backup/            # 게시판 데이터 CSV 백업 (날짜별 폴더 내 boards.csv, posts.csv 등)
     ├── pages/
     │   ├── api/           # 보드/게시글 CRUD API
     │   │   ├── admin/
@@ -208,7 +208,7 @@ pm2 startup
     │   │   └── ...
     │   ├── index.js       # 랜딩 페이지 (전체 피드 버튼 추가)
     │   ├── map.js         # 메인 지도 인터페이스
-    │   ├── rasterMap2.js  # 래스터 지도 버전
+    │   ├── rasterMap2.js  # 이전 주소(/map) 리다이렉트용
     │   ├── board.js       # 게시판 및 CRUD 로직 (날짜 필드 버그 수정)
     │   ├── all.js         # 전체 글 피드 페이지 (NEW)
     │   └── admin.js       # 관리자 페이지 (UI 갤러리 개편)
@@ -224,7 +224,7 @@ pm2 startup
     │   ├── utils.js       # 공통 텍스트/시간 헬퍼 유틸리티 (NEW)
     │   └── imageUtils.js  # 이미지 변환/압축 헬퍼 유틸리티 (NEW)
     ├── uploads/           # 업로드된 물리 이미지 파일 저장소 (NEW: public 폴더 외부로 이동)
-    ├── public/            # 정적 파일 (Favicon, CSS 등)
+    ├── public/            # 정적 파일 (아이콘 이미지 등)
     ├── styles/            # 전역 및 컴포넌트 스타일시트
     │   ├── globals.css    # 전역 스타일 초기화
     │   ├── board.css      # 게시판 컴포넌트 스타일시트 (NEW)
