@@ -100,18 +100,26 @@ export default async function handler(req, res) {
 
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
-      const existing = await query('SELECT password, board_id FROM posts WHERE id = $1', [Number(id)])
+      const existing = await query('SELECT password, board_id, content FROM posts WHERE id = $1', [Number(id)])
       if (!existing || existing.rowCount === 0) return res.status(404).json({ error: 'not found' })
+
+      if (existing.rows[0].content === '(이 글은 삭제되었습니다)') {
+        return res.status(400).json({ error: '이미 삭제된 게시글입니다.' })
+      }
+
       const stored = existing.rows[0].password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
         return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
       }
 
-      // transaction: delete post and decrement boards.posts_count
+      // transaction: update post content and decrement boards.posts_count
       const client = await (await require('../../lib/db').pool).connect()
       try {
         await client.query('BEGIN')
-        const del = await client.query('DELETE FROM posts WHERE id=$1 RETURNING *', [Number(id)])
+        const del = await client.query(
+          "UPDATE posts SET content = '(이 글은 삭제되었습니다)', author = null, password = null, image_url = null, updated_at = now() WHERE id = $1 RETURNING *",
+          [Number(id)]
+        )
         if (del.rowCount === 0) {
           await client.query('ROLLBACK')
           return res.status(404).json({ error: 'not found' })
