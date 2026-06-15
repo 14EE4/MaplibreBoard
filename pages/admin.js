@@ -391,9 +391,14 @@ export default function Admin() {
                                 <p className="post-author">작성자: <strong>{post.author || '익명'}</strong></p>
                                 <p className="post-body">{post.content}</p>
                                 <div className="post-footer">
-                                  <Link href={`/board?id=${post.boardId}`} className="post-link">
-                                    보드 #{post.boardId} 바로가기
-                                  </Link>
+                                  <a 
+                                    href={`/board?id=${post.boardId}#post-${post.id}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="post-link"
+                                  >
+                                    글 #{post.id} 바로가기 (새 탭)
+                                  </a>
                                   <span className="post-date">{new Date(post.created_at).toLocaleDateString()}</span>
                                 </div>
                               </div>
