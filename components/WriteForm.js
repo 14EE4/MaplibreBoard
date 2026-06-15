@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 export default function WriteForm({
   author,
@@ -14,25 +14,43 @@ export default function WriteForm({
   handleRemoveImage,
   submitPost
 }) {
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
+    }
+  }, [content])
+
   return (
     <div className="write-card">
       <h3>새 글 작성</h3>
       <div className="write-form">
         <input 
           id="author" 
-          placeholder="작성자 닉네임 (선택)" 
+          placeholder="작성자 닉네임 (선택 - 최대 20자)" 
+          maxLength={20}
           value={author} 
           onChange={e => setAuthor(e.target.value)} 
           className="input-field" 
         />
-        <textarea 
-          id="content" 
-          placeholder="따뜻한 한 마디를 적어보세요... (Ctrl+Enter로 즉시 전송)" 
-          value={content} 
-          onChange={e => setContent(e.target.value)} 
-          onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
-          className="textarea-field"
-        />
+        <div className="textarea-container" style={{ position: 'relative' }}>
+          <textarea 
+            id="content" 
+            ref={textareaRef}
+            placeholder="따뜻한 한 마디를 적어보세요... (Ctrl+Enter로 즉시 전송)" 
+            value={content} 
+            maxLength={1000}
+            onChange={e => setContent(e.target.value)} 
+            onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
+            className="textarea-field"
+            style={{ paddingBottom: '30px' }}
+          />
+          <div className={`char-counter ${content.length >= 850 ? 'warning' : ''} ${content.length >= 1000 ? 'danger' : ''}`}>
+            {content.length} / 1000
+          </div>
+        </div>
 
         {/* Image Upload Area */}
         <div className="upload-wrapper" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
