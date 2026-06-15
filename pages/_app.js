@@ -1,5 +1,7 @@
 import Head from 'next/head'
 import '../styles/globals.css'
+import '../styles/board.css'
+import '../styles/all.css'
 
 export default function MyApp({ Component, pageProps }) {
   return (
