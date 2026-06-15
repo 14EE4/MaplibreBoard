@@ -11,7 +11,19 @@ export default async function handler(req, res) {
   const { method } = req
   try {
     if (method === 'GET') {
-      const { board_id } = req.query
+      const { board_id, id } = req.query
+      if (id) {
+        const result = await query(`
+          SELECT p.*, b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
+          FROM posts p
+          LEFT JOIN boards b ON p.board_id = b.id
+          WHERE p.id = $1
+        `, [Number(id)])
+        if (!result || result.rowCount === 0) {
+          return res.status(404).json({ error: 'Post not found' })
+        }
+        return res.status(200).json(result.rows[0])
+      }
       if (board_id) {
         const result = await query('SELECT * FROM posts WHERE board_id = $1 ORDER BY created_at DESC', [Number(board_id)])
         return res.status(200).json(result.rows)
