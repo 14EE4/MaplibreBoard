@@ -45,10 +45,19 @@ body {
 }
 
 @media (max-width: 600px) {
+  .board-container {
+    padding: 20px 12px;
+  }
   .board-header {
     flex-direction: column-reverse;
     align-items: flex-start;
     gap: 12px;
+  }
+  .sidebar-card {
+    padding: 20px 16px;
+  }
+  .write-card {
+    padding: 20px 16px;
   }
   .form-footer {
     flex-direction: column;
@@ -60,6 +69,24 @@ body {
   }
   .form-footer .btn {
     width: 100%;
+  }
+  .posts-timeline {
+    padding: 16px 0;
+    background: none;
+    border: none;
+  }
+  .post-card {
+    padding: 16px 14px;
+  }
+  .post-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .post-header-left {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 
