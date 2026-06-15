@@ -13,6 +13,7 @@ export default function PostCard({
   onCitationClick,
   onCitationHover,
   onPostNumberClick,
+  onShareClick,
   backlinks = []
 }) {
   const isEditing = editing[post.id]?.editing
@@ -39,6 +40,17 @@ export default function PostCard({
             No. {post.id}
           </span>
           <span className="post-author">{post.author ? escapeHtml(post.author) : '익명'}</span>
+          <button 
+            className="btn-share-post"
+            title="글 주소 복사"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onShareClick && onShareClick(post.id, post.board_id)
+            }}
+          >
+            공유
+          </button>
         </div>
         <span className="post-date">{post.created_at ? formatTime(post.created_at) : ''}</span>
       </div>

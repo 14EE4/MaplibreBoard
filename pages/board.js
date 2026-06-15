@@ -47,6 +47,10 @@ export default function Board() {
   const [imageError, setImageError] = useState(null)
 
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '' })
+
+  const toastTimeoutRef = useRef(null)
+  const hasScrolledRef = useRef(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -170,8 +174,55 @@ export default function Board() {
     }, 50)
   }, [])
 
+  const showToast = useCallback((msg) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    setToast({ show: true, message: msg })
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast({ show: false, message: '' })
+    }, 3000)
+  }, [])
+
+  const handleShareClick = useCallback((postId, boardId) => {
+    if (!boardId) return
+    const postUrl = `${window.location.origin}/board?id=${boardId}#post-${postId}`
+    
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(postUrl)
+        .then(() => {
+          showToast('글 주소가 클립보드에 복사되었습니다.')
+        })
+        .catch(err => {
+          console.error('Failed to copy text using clipboard API: ', err)
+          fallbackCopyText(postUrl)
+        })
+    } else {
+      fallbackCopyText(postUrl)
+    }
+  }, [showToast])
+
+  const fallbackCopyText = useCallback((text) => {
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    textArea.style.position = 'fixed'
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      showToast('글 주소가 클립보드에 복사되었습니다.')
+    } catch (err) {
+      console.error('Fallback copy failed', err)
+      alert('주소 복사에 실패했습니다.')
+    }
+    document.body.removeChild(textArea)
+  }, [showToast])
+
   // Auto scroll and highlight if hash contains post ID on load
   useEffect(() => {
+    if (hasScrolledRef.current) return
+
     const handleHashChange = () => {
       const hash = window.location.hash
       if (hash && hash.startsWith('#post-')) {
@@ -191,6 +242,7 @@ export default function Board() {
 
     if (posts.length > 0) {
       handleHashChange()
+      hasScrolledRef.current = true
     }
   }, [posts])
 
@@ -353,6 +405,7 @@ export default function Board() {
 
   useEffect(() => {
     // entry: on query change
+    hasScrolledRef.current = false
     if (id) loadBoardById(id)
     else if (grid_x != null && grid_y != null) loadBoardByGrid(grid_x, grid_y)
     else setMetaText('URL에 ?id=BOARD_ID 또는 ?grid_x=NUM&grid_y=NUM 를 추가하세요.')
@@ -417,11 +470,18 @@ export default function Board() {
       if (fileInput) fileInput.value = ''
 
       try {
-        // 새 글 작성 후 전체 페이지 새로고침으로 최신 상태 반영
-        window.location.reload()
+        if (router && typeof router.replace === 'function') {
+          await router.replace({
+            pathname: '/board',
+            query: { id: resolvedBoardId }
+          }, undefined, { shallow: true })
+        } else {
+          window.history.replaceState(null, '', `/board?id=${resolvedBoardId}`)
+        }
       } catch (e) {
-        loadPosts(resolvedBoardId)
+        window.history.replaceState(null, '', `/board?id=${resolvedBoardId}`)
       }
+      loadPosts(resolvedBoardId)
     } catch (err) {
       console.error('post failed', err)
       alert(err.message || '작성 실패. 콘솔을 확인하세요.')
@@ -608,6 +668,7 @@ export default function Board() {
                         onCitationClick={handleCitationClick}
                         onCitationHover={handleCitationHover}
                         onPostNumberClick={handlePostNumberClick}
+                        onShareClick={handleShareClick}
                         backlinks={backlinksMap[p.id]}
                       />
                     ))}
@@ -638,6 +699,12 @@ export default function Board() {
       >
         ▲
       </button>
+
+      {/* 토스트 알림 */}
+      <div className={`toast-container ${toast.show ? 'show' : ''}`}>
+        <span className="toast-icon">✓</span>
+        <span>{toast.message}</span>
+      </div>
     </>
   )
 }

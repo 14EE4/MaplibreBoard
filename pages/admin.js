@@ -1,8 +1,10 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/router'
 
 export default function Admin() {
+  const router = useRouter()
   const [boards, setBoards] = useState([])
   const [authorized, setAuthorized] = useState(false)
   const [inputPw, setInputPw] = useState('')
@@ -10,6 +12,34 @@ export default function Admin() {
 
   // New states for moderation
   const [activeTab, setActiveTab] = useState('boards') // 'boards' or 'moderation'
+
+  useEffect(() => {
+    // Parse query parameter to set initial active tab
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam === 'censorship') {
+      setActiveTab('moderation')
+    } else if (tabParam === 'boards') {
+      setActiveTab('boards')
+    }
+  }, [])
+
+  const handleTabChange = useCallback((tab) => {
+    setActiveTab(tab)
+    const newTabParam = tab === 'moderation' ? 'censorship' : 'boards'
+    try {
+      if (router && typeof router.push === 'function') {
+        router.push({
+          pathname: '/admin',
+          query: { tab: newTabParam }
+        }, undefined, { shallow: true })
+      } else {
+        window.history.pushState(null, '', `/admin?tab=${newTabParam}`)
+      }
+    } catch (e) {
+      window.history.pushState(null, '', `/admin?tab=${newTabParam}`)
+    }
+  }, [router])
   const [images, setImages] = useState([])
   const [loadingImages, setLoadingImages] = useState(false)
   const [pendingAction, setPendingAction] = useState(null) // { fileName, action, postInfo }
@@ -113,7 +143,7 @@ export default function Admin() {
     setInputPw('')
     setBoards([])
     setImages([])
-    setActiveTab('boards')
+    handleTabChange('boards')
   }
 
   async function handleConfirmDelete() {
@@ -301,13 +331,13 @@ export default function Admin() {
         {/* Dashboard Tabs */}
         <nav className="dashboard-tabs">
           <button
-            onClick={() => setActiveTab('boards')}
+            onClick={() => handleTabChange('boards')}
             className={`tab-btn ${activeTab === 'boards' ? 'active' : ''}`}
           >
             게시판 목록 ({boards.length})
           </button>
           <button
-            onClick={() => setActiveTab('moderation')}
+            onClick={() => handleTabChange('moderation')}
             className={`tab-btn ${activeTab === 'moderation' ? 'active' : ''}`}
           >
             이미지 검열 및 관리
