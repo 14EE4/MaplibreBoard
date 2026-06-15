@@ -12,7 +12,8 @@ export default function WriteForm({
   loading,
   handleFileChange,
   handleRemoveImage,
-  submitPost
+  submitPost,
+  handlePaste
 }) {
   const textareaRef = useRef(null)
 
@@ -44,6 +45,7 @@ export default function WriteForm({
             maxLength={1000}
             onChange={e => setContent(e.target.value)} 
             onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
+            onPaste={handlePaste}
             className="textarea-field"
             style={{ paddingBottom: '30px' }}
           />

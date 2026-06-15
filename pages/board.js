@@ -196,8 +196,7 @@ export default function Board() {
 
 
 
-  const handleFileChange = async (e) => {
-    let file = e.target.files[0]
+  const processAndSetFile = async (file) => {
     if (!file) return
 
     setImageError(null)
@@ -205,9 +204,10 @@ export default function Board() {
     setMetaText('이미지 처리 중...')
 
     try {
-      const fileName = file.name.toLowerCase()
+      const fileName = (file.name || 'clipboard-image.png').toLowerCase()
       const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif'
 
+      let fileToProcess = file
       if (isHeic) {
         try {
           const heic2any = await loadHeic2Any()
@@ -217,7 +217,7 @@ export default function Board() {
             quality: 0.8
           })
           const blob = Array.isArray(converted) ? converted[0] : converted
-          file = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
+          fileToProcess = new File([blob], fileName.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
         } catch (err) {
           console.error('HEIC conversion failed', err)
           setImageError('HEIC 이미지 변환에 실패했습니다. (다른 형식의 이미지를 사용해 주세요)')
@@ -227,7 +227,7 @@ export default function Board() {
         }
       }
 
-      if (!file.type.startsWith('image/')) {
+      if (!fileToProcess.type.startsWith('image/')) {
         setImageError('이미지 파일만 첨부할 수 있습니다.')
         setLoading(false)
         setMetaText('')
@@ -235,7 +235,7 @@ export default function Board() {
       }
 
       // Compress and resize
-      const compressedDataUrl = await compressImage(file)
+      const compressedDataUrl = await compressImage(fileToProcess)
       setImagePreview(compressedDataUrl)
       setMetaText('')
     } catch (err) {
@@ -244,6 +244,30 @@ export default function Board() {
       setMetaText('')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      await processAndSetFile(file)
+    }
+  }
+
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile()
+        if (file) {
+          e.preventDefault() // prevent pasting file representation as text
+          await processAndSetFile(file)
+          break
+        }
+      }
     }
   }
 
@@ -556,6 +580,7 @@ export default function Board() {
                   handleFileChange={handleFileChange}
                   handleRemoveImage={handleRemoveImage}
                   submitPost={submitPost}
+                  handlePaste={handlePaste}
                 />
 
                 {/* Posts Timeline List */}
