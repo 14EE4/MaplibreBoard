@@ -1,5 +1,6 @@
 import React from 'react'
 import { escapeHtml, formatTime } from '../lib/utils'
+import PostContent from './PostContent'
 
 export default function PostCard({
   post,
@@ -8,15 +9,26 @@ export default function PostCard({
   setLightboxImage,
   verifyAndEdit,
   saveEdit,
-  deletePost
+  deletePost,
+  onCitationClick,
+  onCitationHover,
+  onPostNumberClick,
+  backlinks = []
 }) {
   const isEditing = editing[post.id]?.editing
 
   return (
-    <div className="post-card">
+    <div id={`post-${post.id}`} className="post-card">
       <div className="post-header">
         <div className="post-header-left">
-          <span className="post-number">No. {post.id}</span>
+          <span 
+            className="post-number"
+            style={{ cursor: 'pointer' }}
+            title="클릭하여 답장 인용"
+            onClick={() => onPostNumberClick && onPostNumberClick(post.id)}
+          >
+            No. {post.id}
+          </span>
           <span className="post-author">{post.author ? escapeHtml(post.author) : '익명'}</span>
         </div>
         <span className="post-date">{post.created_at ? formatTime(post.created_at) : ''}</span>
@@ -32,7 +44,13 @@ export default function PostCard({
           />
         ) : (
           <>
-            <p className="post-text" dangerouslySetInnerHTML={{ __html: escapeHtml(post.content || '').replace(/\n/g, '<br>') }} />
+            <p className="post-text">
+              <PostContent 
+                content={post.content} 
+                onCitationClick={onCitationClick} 
+                onCitationHover={onCitationHover} 
+              />
+            </p>
             {post.image_url && (
               <div className="post-image-container">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,6 +60,28 @@ export default function PostCard({
                   onClick={() => setLightboxImage(post.image_url)}
                   className="post-image"
                 />
+              </div>
+            )}
+            
+            {backlinks && backlinks.length > 0 && (
+              <div className="post-backlinks">
+                <span className="backlink-label">↳ 인용한 글:</span>
+                {backlinks.map((bl) => (
+                  <a
+                    key={bl.id}
+                    href={`#post-${bl.id}`}
+                    className="backlink-link"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (onCitationClick) onCitationClick(bl.id)
+                    }}
+                    onMouseEnter={(e) => onCitationHover && onCitationHover(e, bl.id)}
+                    onMouseLeave={() => onCitationHover && onCitationHover(null)}
+                  >
+                    &gt;&gt;{bl.id}
+                  </a>
+                ))}
               </div>
             )}
           </>

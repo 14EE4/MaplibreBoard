@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import { loadHeic2Any, compressImage } from '../lib/imageUtils'
@@ -7,6 +7,7 @@ import BoardSidebar from '../components/BoardSidebar'
 import WriteForm from '../components/WriteForm'
 import PostCard from '../components/PostCard'
 import Lightbox from '../components/Lightbox'
+import PostPreview from '../components/PostPreview'
 
 export default function Board() {
   const router = useRouter()
@@ -44,6 +45,136 @@ export default function Board() {
   const [imagePreview, setImagePreview] = useState(null)
   const [lightboxImage, setLightboxImage] = useState(null)
   const [imageError, setImageError] = useState(null)
+
+  // Preview popover states
+  const [previewPost, setPreviewPost] = useState(null)
+  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 })
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState(null)
+  const hoverTimeoutRef = useRef(null)
+
+  // Memoize backlinks map: targetPostId -> array of citing posts info
+  const backlinksMap = useMemo(() => {
+    const map = {}
+    posts.forEach(p => {
+      if (!p.content) return
+      const matches = p.content.match(/(?:>>|@)\d+/g)
+      if (matches) {
+        const uniqueTargets = [...new Set(matches.map(m => m.replace(/^>>|^@/, '')))]
+        uniqueTargets.forEach(targetId => {
+          if (!map[targetId]) map[targetId] = []
+          map[targetId].push({ id: p.id, author: p.author, board_id: p.board_id })
+        })
+      }
+    })
+    return map
+  }, [posts])
+
+  // Citation Click: scroll to post, highlight, or fetch & redirect if other board
+  const handleCitationClick = useCallback((targetId) => {
+    const element = document.getElementById(`post-${targetId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      element.classList.add('highlight-flash')
+      setTimeout(() => {
+        element.classList.remove('highlight-flash')
+      }, 2000)
+    } else {
+      fetch(`/api/posts?id=${targetId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('존재하지 않는 게시글입니다.')
+          return res.json()
+        })
+        .then(post => {
+          if (post.board_id) {
+            window.location.href = `/board?id=${post.board_id}#post-${post.id}`
+          }
+        })
+        .catch(err => {
+          alert(err.message)
+        })
+    }
+  }, [])
+
+  // Citation Hover: show floating popover preview card
+  const handleCitationHover = useCallback((e, targetId) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+
+    if (!e) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setPreviewPost(null)
+        setPreviewError(null)
+        setPreviewLoading(false)
+      }, 100)
+      return
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(160, Math.min(window.innerWidth - 160, rect.left + rect.width / 2))
+    const y = rect.top + window.scrollY
+
+    setPreviewPosition({ x, y })
+    setPreviewLoading(true)
+    setPreviewError(null)
+
+    const foundPost = posts.find(p => String(p.id) === String(targetId))
+    if (foundPost) {
+      setPreviewPost(foundPost)
+      setPreviewLoading(false)
+    } else {
+      fetch(`/api/posts?id=${targetId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('게시글을 찾을 수 없습니다.')
+          return res.json()
+        })
+        .then(data => {
+          setPreviewPost(data)
+          setPreviewLoading(false)
+        })
+        .catch(err => {
+          setPreviewError(err.message || '게시글 조회 중 오류가 발생했습니다.')
+          setPreviewLoading(false)
+        })
+    }
+  }, [posts])
+
+  // Click post number to auto-insert reference text into textarea
+  const handlePostNumberClick = useCallback((postId) => {
+    setContent(prev => {
+      const trimmed = prev.trim()
+      return trimmed ? `${trimmed}\n>>${postId} ` : `>>${postId} `
+    })
+    setTimeout(() => {
+      document.getElementById('content')?.focus()
+    }, 50)
+  }, [])
+
+  // Auto scroll and highlight if hash contains post ID on load
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash && hash.startsWith('#post-')) {
+        const postId = hash.replace('#post-', '')
+        setTimeout(() => {
+          const element = document.getElementById(`post-${postId}`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            element.classList.add('highlight-flash')
+            setTimeout(() => {
+              element.classList.remove('highlight-flash')
+            }, 2000)
+          }
+        }, 300)
+      }
+    }
+
+    if (posts.length > 0) {
+      handleHashChange()
+    }
+  }, [posts])
 
 
 
@@ -431,6 +562,10 @@ export default function Board() {
                         verifyAndEdit={verifyAndEdit}
                         saveEdit={saveEdit}
                         deletePost={deletePost}
+                        onCitationClick={handleCitationClick}
+                        onCitationHover={handleCitationHover}
+                        onPostNumberClick={handlePostNumberClick}
+                        backlinks={backlinksMap[p.id]}
                       />
                     ))}
                   </div>
@@ -443,6 +578,14 @@ export default function Board() {
 
       {/* 라이트박스 모달 뷰어 */}
       <Lightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
+
+      {/* 글 미리보기 팝오버 */}
+      <PostPreview 
+        post={previewPost}
+        position={previewPosition}
+        loading={previewLoading}
+        error={previewError}
+      />
     </>
   )
 }
