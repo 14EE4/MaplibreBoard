@@ -220,33 +220,59 @@ export default function MapPage() {
         // UI control
         const gridControl = document.createElement('div')
         gridControl.style.position = 'absolute'
-        gridControl.style.top = '10px'
-        gridControl.style.right = '10px'
-        gridControl.style.background = 'rgba(255,255,255,0.9)'
-        gridControl.style.padding = '8px'
-        gridControl.style.borderRadius = '4px'
-        gridControl.style.boxShadow = '0 1px 4px rgba(0,0,0,0.2)'
-        gridControl.style.fontFamily = 'sans-serif'
+        gridControl.style.top = '16px'
+        gridControl.style.right = '16px'
+        gridControl.style.background = 'rgba(17, 24, 39, 0.8)'
+        gridControl.style.backdropFilter = 'blur(8px)'
+        gridControl.style.webkitBackdropFilter = 'blur(8px)'
+        gridControl.style.border = '1px solid rgba(255, 255, 255, 0.08)'
+        gridControl.style.padding = '10px 16px'
+        gridControl.style.borderRadius = '12px'
+        gridControl.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
+        gridControl.style.fontFamily = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         gridControl.style.fontSize = '13px'
+        gridControl.style.color = '#f3f4f6'
+        gridControl.style.display = 'flex'
+        gridControl.style.alignItems = 'center'
+        gridControl.style.gap = '10px'
         gridControl.style.zIndex = 9999
 
+        const styleSelect = (selectEl) => {
+          selectEl.style.background = 'rgba(31, 41, 55, 0.6)'
+          selectEl.style.border = '1px solid rgba(255, 255, 255, 0.1)'
+          selectEl.style.color = '#f3f4f6'
+          selectEl.style.padding = '4px 8px'
+          selectEl.style.borderRadius = '6px'
+          selectEl.style.fontSize = '12px'
+          selectEl.style.fontFamily = 'inherit'
+          selectEl.style.outline = 'none'
+          selectEl.style.cursor = 'pointer'
+        }
+
         const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = gridState.enabled; toggle.id = 'gridToggle'
-        const label = document.createElement('label'); label.htmlFor = 'gridToggle'; label.textContent = 'Grid'; label.style.marginRight = '8px'
+        toggle.style.cursor = 'pointer'
+        const label = document.createElement('label'); label.htmlFor = 'gridToggle'; label.textContent = 'Grid'
+        label.style.cursor = 'pointer'
+        label.style.fontWeight = '500'
 
         // map mode selector
         const modeSelect = document.createElement('select')
         ;['osm','sat','globe'].forEach(function(m){ const o = document.createElement('option'); o.value = m; o.text = (m==='osm'?'OpenStreetMap':m==='sat'?'Satellite':'Globe (vector)'); modeSelect.appendChild(o) })
-        modeSelect.style.marginLeft = '8px'
+        styleSelect(modeSelect)
         try { if (currentMode) modeSelect.value = currentMode } catch(e){}
-        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'; modeLabel.style.marginLeft = '8px'
+        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'
+        modeLabel.style.fontWeight = '500'
 
         const sizeSelect = document.createElement('select')
         const sizes = [0.25, 0.5, 1, 2, 5, 10, 20]
         sizes.forEach(function(s){ const opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); })
-        sizeSelect.style.marginLeft = '6px'
-        const sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'; sizeLabel.style.marginLeft = '8px'
+        styleSelect(sizeSelect)
+        const sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'
+        sizeLabel.style.fontWeight = '500'
         sizeSelect.value = gridState.sizeDeg
         sizeSelect.disabled = true
+        sizeSelect.style.opacity = '0.6'
+        sizeSelect.style.cursor = 'not-allowed'
 
         gridControl.appendChild(toggle); gridControl.appendChild(label); gridControl.appendChild(sizeLabel); gridControl.appendChild(sizeSelect); gridControl.appendChild(modeLabel); gridControl.appendChild(modeSelect)
         // append to map container
