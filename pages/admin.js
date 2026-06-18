@@ -2,6 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
+import { formatTime } from '../lib/utils'
 
 export default function Admin() {
   const router = useRouter()
@@ -425,7 +426,7 @@ export default function Admin() {
                                   >
                                     글 #{post.id} 바로가기 (새 탭)
                                   </a>
-                                  <span className="post-date">{new Date(post.created_at).toLocaleDateString()}</span>
+                                  <span className="post-date">{post.created_at ? formatTime(post.created_at) : '기록 없음'}</span>
                                 </div>
                               </div>
                             ))}
@@ -541,7 +542,7 @@ export default function Admin() {
                               <code className="ip-badge">기록 없음</code>
                             )}
                           </td>
-                          <td>{new Date(post.created_at).toLocaleString()}</td>
+                          <td>{post.created_at ? formatTime(post.created_at) : '기록 없음'}</td>
                         </tr>
                       ))}
                     </tbody>
