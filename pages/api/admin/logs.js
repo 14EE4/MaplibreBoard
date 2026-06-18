@@ -27,18 +27,22 @@ export default async function handler(req, res) {
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress;
+  const userAgent = req.headers['user-agent'] || 'Unknown';
+  const timestamp = new Date().toISOString();
+
+  console.log(`[${timestamp}] [API LOG] [GET] /api/admin/logs - 어드민 PM2 로그 조회 시도 (IP: ${ip}, UA: ${userAgent})`);
+
   // 1. Authenticate Request
   const auth = req.headers['authorization'] || req.query.auth || (req.body && req.body.auth);
   if (auth !== ADMIN_PASSWORD) {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [API LOG] [401 Unauthorized] 어드민 PM2 로그 조회 실패 - 인증 실패`);
+    const failTimestamp = new Date().toISOString();
+    console.log(`[${failTimestamp}] [API LOG] [401 Unauthorized] 어드민 PM2 로그 조회 실패 - 인증 실패 (IP: ${ip})`);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [API LOG] 어드민 PM2 로그 조회 시도`);
-
     let home = os.homedir();
     if (process.env.PM2_USER) {
       if (process.platform === 'win32') {
@@ -56,7 +60,7 @@ export default async function handler(req, res) {
     const errLogs = readLastNLines(errLogPath, 200);
 
     const successTimestamp = new Date().toISOString();
-    console.log(`[${successTimestamp}] [API LOG] 어드민 PM2 로그 조회 성공`);
+    console.log(`[${successTimestamp}] [API LOG] [200 OK] 어드민 PM2 로그 조회 성공 (IP: ${ip})`);
 
     return res.status(200).json({
       success: true,
