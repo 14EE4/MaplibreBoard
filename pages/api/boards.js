@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       // accept optional grid and center fields so clients can create boards tied to a grid
       const { name, grid_x, grid_y, center_lng, center_lat } = req.body || {}
       
-      console.log(`[${timestamp}] [API LOG] [POST] /api/boards - 새 게시판 생성 요청 들어옴 (IP: ${ip}, 이름: ${name}, 좌표: (${grid_x}, ${grid_y}), UA: ${userAgent})`)
+      console.log(`[${timestamp}] [API LOG] [POST] /api/boards - 새 게시판 생성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
 
       const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat)
         VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat`

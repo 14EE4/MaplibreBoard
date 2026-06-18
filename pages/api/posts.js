@@ -76,7 +76,6 @@ export default async function handler(req, res) {
       const userAgent = req.headers['user-agent'] || 'Unknown'
       const { os, browser } = parseUA(userAgent)
       const timestamp = new Date().toISOString()
-      const contentSnippet = content ? (content.length > 20 ? content.substring(0, 20) + '...' : content) : '';
 
       let location = null;
       if (ip) {
@@ -90,7 +89,7 @@ export default async function handler(req, res) {
         }
       }
 
-      console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, 작성자: ${author || '익명'}, 내용 일부: "${contentSnippet}", UA: ${userAgent})`)
+      console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
 
       if (!board_id || !content) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 필수값 누락 (IP: ${ip})`)
@@ -144,9 +143,8 @@ export default async function handler(req, res) {
       const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
       const userAgent = req.headers['user-agent'] || 'Unknown'
       const timestamp = new Date().toISOString()
-      const contentSnippet = content ? (content.length > 20 ? content.substring(0, 20) + '...' : content) : '';
 
-      console.log(`[${timestamp}] [API LOG] [PUT] /api/posts - 글 수정 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, 작성자: ${author || '익명'}, 내용 일부: "${contentSnippet}", UA: ${userAgent})`)
+      console.log(`[${timestamp}] [API LOG] [PUT] /api/posts - 글 수정 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, UA: ${userAgent})`)
 
       if (!id || !content) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 필수값 누락 (IP: ${ip})`)
@@ -198,6 +196,8 @@ export default async function handler(req, res) {
       const userAgent = req.headers['user-agent'] || 'Unknown'
       const timestamp = new Date().toISOString()
 
+      console.log(`[${timestamp}] [API LOG] [DELETE] /api/posts - 글 삭제 요청 들어옴 (IP: ${ip}, 대상 글: ${id || 'Unknown'}, UA: ${userAgent})`)
+
       if (!id) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 필수값 누락 (IP: ${ip})`)
         return res.status(400).json({ error: 'id required' })
@@ -212,8 +212,6 @@ export default async function handler(req, res) {
       }
 
       const existingPost = existing.rows[0]
-      const existingContentSnippet = existingPost.content ? (existingPost.content.length > 20 ? existingPost.content.substring(0, 20) + '...' : existingPost.content) : '';
-      console.log(`[${timestamp}] [API LOG] [DELETE] /api/posts - 글 삭제 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, 작성자: ${existingPost.author || '익명'}, 내용 일부: "${existingContentSnippet}", UA: ${userAgent})`)
 
       if (existingPost.content === '(이 글은 삭제되었습니다)') {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 이미 삭제된 글 (IP: ${ip}, 대상 글: ${id})`)
