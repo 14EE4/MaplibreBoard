@@ -122,6 +122,8 @@ body {
   padding: 4px 10px;
   border-radius: 6px;
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .post-date {
