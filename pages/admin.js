@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
 
 export default function Admin() {
@@ -55,6 +55,20 @@ export default function Admin() {
   const [loadingPosts, setLoadingPosts] = useState(false)
   const [logs, setLogs] = useState({ out: '', err: '' })
   const [loadingLogs, setLoadingLogs] = useState(false)
+
+  const stdoutRef = useRef(null)
+  const stderrRef = useRef(null)
+
+  useEffect(() => {
+    if (activeTab === 'logs') {
+      if (stdoutRef.current) {
+        stdoutRef.current.scrollTop = stdoutRef.current.scrollHeight;
+      }
+      if (stderrRef.current) {
+        stderrRef.current.scrollTop = stderrRef.current.scrollHeight;
+      }
+    }
+  }, [logs, activeTab])
 
   useEffect(() => {
     // Check session flags
@@ -553,7 +567,7 @@ export default function Admin() {
                     <div className="log-viewer-header">
                       <div className="log-viewer-title title-stdout">표준 출력 로그 (Stdout)</div>
                     </div>
-                    <pre className="log-viewer-content">
+                    <pre ref={stdoutRef} className="log-viewer-content">
                       {logs.out || '로그가 비어 있거나 기록이 없습니다.'}
                     </pre>
                   </div>
@@ -562,7 +576,7 @@ export default function Admin() {
                     <div className="log-viewer-header">
                       <div className="log-viewer-title title-stderr">에러 출력 로그 (Stderr)</div>
                     </div>
-                    <pre className="log-viewer-content">
+                    <pre ref={stderrRef} className="log-viewer-content">
                       {logs.err || '에러 로그가 비어 있거나 기록이 없습니다.'}
                     </pre>
                   </div>
