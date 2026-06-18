@@ -182,11 +182,10 @@ pm2 startup
    pm2 reload map-board  # 혹은 pm2 restart map-board
    ```
 
-5. **[서버] 테스트 종료 후 복구 (선택)**
-   피처 브랜치 검증 완료 후 다시 안정적인 메인(`main`) 브랜치로 되돌리려면 아래 명령어를 실행합니다.
+5. **[서버] 메인 브랜치 업데이트 및 서비스 반영 (원클릭 복사 스크립트)**
+   피처 브랜치 검증이 끝난 후, 또는 서버에서 메인(`main`) 브랜치만 신속히 불러와 전체 업데이트를 진행하려면 아래 명령어 블록을 전체 복사하여 서버 터미널에 붙여넣기 하시면 됩니다.
    ```bash
-   git checkout main
-   pm2 reload map-board
+   git checkout main && git pull origin main && npm install && npm run build && pm2 reload map-board
    ```
 
 ---
