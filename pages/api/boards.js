@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'POST'])
     res.status(405).end(`Method ${method} Not Allowed`)
   } catch (err) {
-    console.error('boards API error', err)
+    console.error('[API ERROR] boards API error', err)
     res.status(500).json({ error: 'internal_error' })
   }
 }

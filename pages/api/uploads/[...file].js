@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     const stream = fs.createReadStream(resolvedPath);
     stream.pipe(res);
   } catch (error) {
-    console.error('Error serving file:', error);
+    console.error('[API ERROR] Error serving file:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

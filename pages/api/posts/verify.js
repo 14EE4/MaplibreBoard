@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     }
     return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
   } catch (err) {
-    console.error('posts verify error', err)
+    console.error('[API ERROR] posts verify error', err)
     return res.status(500).json({ error: 'internal_error' })
   }
 }
