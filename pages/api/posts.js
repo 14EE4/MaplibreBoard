@@ -14,7 +14,8 @@ export default async function handler(req, res) {
       const { board_id, id } = req.query
       if (id) {
         const result = await query(`
-          SELECT p.*, b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
+          SELECT p.id, p.board_id, p.author, p.content, p.image_url, p.created_at, p.updated_at,
+                 b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
           FROM posts p
           LEFT JOIN boards b ON p.board_id = b.id
           WHERE p.id = $1
@@ -25,11 +26,17 @@ export default async function handler(req, res) {
         return res.status(200).json(result.rows[0])
       }
       if (board_id) {
-        const result = await query('SELECT * FROM posts WHERE board_id = $1 ORDER BY created_at DESC', [Number(board_id)])
+        const result = await query(`
+          SELECT id, board_id, author, content, image_url, created_at, updated_at
+          FROM posts
+          WHERE board_id = $1
+          ORDER BY created_at DESC
+        `, [Number(board_id)])
         return res.status(200).json(result.rows)
       }
       const result = await query(`
-        SELECT p.*, b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
+        SELECT p.id, p.board_id, p.author, p.content, p.image_url, p.created_at, p.updated_at,
+               b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
         FROM posts p
         LEFT JOIN boards b ON p.board_id = b.id
         ORDER BY p.created_at DESC
@@ -55,12 +62,21 @@ export default async function handler(req, res) {
       const client = await (await pool).connect()
       try {
         await client.query('BEGIN')
-        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url) VALUES($1,$2,$3,$4,$5) RETURNING *'
-        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null])
+        
+        // Extract real client IP (Nginx proxy pass environments set x-forwarded-for)
+        const forwarded = req.headers['x-forwarded-for']
+        const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
+
+        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url, ip) VALUES($1,$2,$3,$4,$5,$6) RETURNING *'
+        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null, ip || null])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
-        console.log(`[API LOG] 글 작성 완료! 등록된 글 번호: ${insert.rows[0].id}`)
-        return res.status(201).json(insert.rows[0])
+        
+        const savedPost = insert.rows[0]
+        delete savedPost.ip // Securely remove IP from returned response to prevent leakage
+        
+        console.log(`[API LOG] 글 작성 완료! 등록된 글 번호: ${savedPost.id}`)
+        return res.status(201).json(savedPost)
       } catch (err) {
         await client.query('ROLLBACK')
         throw err

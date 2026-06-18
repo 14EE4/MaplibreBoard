@@ -21,12 +21,16 @@ export default function Admin() {
       setActiveTab('moderation')
     } else if (tabParam === 'boards') {
       setActiveTab('boards')
+    } else if (tabParam === 'posts') {
+      setActiveTab('posts')
     }
   }, [])
 
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab)
-    const newTabParam = tab === 'moderation' ? 'censorship' : 'boards'
+    let newTabParam = 'boards'
+    if (tab === 'moderation') newTabParam = 'censorship'
+    else if (tab === 'posts') newTabParam = 'posts'
     try {
       if (router && typeof router.push === 'function') {
         router.push({
@@ -44,6 +48,8 @@ export default function Admin() {
   const [loadingImages, setLoadingImages] = useState(false)
   const [pendingAction, setPendingAction] = useState(null) // { fileName, action, postInfo }
   const [moderationError, setModerationError] = useState('')
+  const [allPosts, setAllPosts] = useState([])
+  const [loadingPosts, setLoadingPosts] = useState(false)
 
   useEffect(() => {
     // Check session flags
@@ -87,6 +93,31 @@ export default function Admin() {
     if (!authorized || activeTab !== 'moderation') return
     fetchImages()
   }, [authorized, activeTab])
+
+  useEffect(() => {
+    if (!authorized || activeTab !== 'posts') return
+    fetchPosts()
+  }, [authorized, activeTab])
+
+  async function fetchPosts() {
+    setLoadingPosts(true)
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/posts?auth=${encodeURIComponent(inputPw)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAllPosts(data)
+      } else {
+        const err = await res.json()
+        setModerationError(err.error || '게시글 목록을 불러오지 못했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      setModerationError('서버 통신에 실패했습니다.')
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
 
   async function fetchImages() {
     setLoadingImages(true)
@@ -143,6 +174,7 @@ export default function Admin() {
     setInputPw('')
     setBoards([])
     setImages([])
+    setAllPosts([])
     handleTabChange('boards')
   }
 
@@ -248,6 +280,12 @@ export default function Admin() {
             className={`tab-btn ${activeTab === 'moderation' ? 'active' : ''}`}
           >
             이미지 검열 및 관리
+          </button>
+          <button
+            onClick={() => handleTabChange('posts')}
+            className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
+          >
+            전체 게시글 및 IP 관리
           </button>
         </nav>
 
@@ -373,6 +411,74 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Tab 3: All Posts and IP List */}
+          {activeTab === 'posts' && (
+            <section className="card-section">
+              <div className="section-header">
+                <h2>전체 게시글 및 작성자 IP 목록</h2>
+                <button onClick={fetchPosts} className="btn btn-secondary btn-sm" disabled={loadingPosts}>
+                  새로고침
+                </button>
+              </div>
+
+              {loadingPosts ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>서버에서 게시글을 불러오는 중...</p>
+                </div>
+              ) : allPosts.length === 0 ? (
+                <div className="empty-state">
+                  <p>등록된 게시글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>글 번호</th>
+                        <th>게시판 이름</th>
+                        <th>작성자</th>
+                        <th>내용</th>
+                        <th>작성자 IP</th>
+                        <th>작성 일시</th>
+                        <th>링크</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allPosts.map((post) => (
+                        <tr key={post.id}>
+                          <td>#{post.id}</td>
+                          <td>
+                            {post.board_name || '이름 없음'}
+                            {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
+                          </td>
+                          <td><strong>{post.author || '익명'}</strong></td>
+                          <td className="table-post-content" title={post.content}>
+                            {post.content}
+                          </td>
+                          <td>
+                            <code className="ip-badge">{post.ip || '기록 없음'}</code>
+                          </td>
+                          <td>{new Date(post.created_at).toLocaleString()}</td>
+                          <td>
+                            <a
+                              href={`/board?id=${post.board_id}#post-${post.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-link"
+                            >
+                              바로가기
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </section>
