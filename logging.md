@@ -17,7 +17,7 @@
 | :--- | :--- | :--- |
 | **When (언제)** | 요청 처리 시간 | 신뢰할 수 있는 `ISO 8601 UTC Timestamp` (`new Date().toISOString()`) |
 | **Who (누가)** | 요청 행위자 식별 | **익명 게시판 특성상 IP 주소로 대체** (로그 내 닉네임/비밀번호 배제) |
-| **Where (어디서)** | 출발지 및 기기 식별 | Nginx 프록시를 통과한 실제 공인 IP (`x-forwarded-for`) + 기기 정보 (`User-Agent`) |
+| **Where (어디서)** | 출발지 및 기기 식별 | Nginx 프록시를 통과한 실제 공인 IP (`x-forwarded-for`) + 기기 정보 (`User-Agent`) (서버사이드에서 `geoip-lite` 라이브러리를 통해 IP 기준 국가/도시 정보를 분석하여 DB에 `location` 컬럼으로 기록하며 어드민에서 노출됨) |
 | **What (무엇을)** | 처리 목적 및 데이터 | 신규 글 작성(POST), 글 수정(PUT), 글 삭제(DELETE), 어드민 로그인 시도 등 |
 | **How (어떻게)** | 프로토콜 및 메서드 | HTTP Request Method (`POST`, `PUT`, `DELETE`) + 요청 경로 |
 | **Result (결과)** | 최종 성공 여부 | 결과 상태 코드 (`200 OK`, `201 Created`, `400 Bad Request`, `403 Forbidden`, `404 Not Found`) |
