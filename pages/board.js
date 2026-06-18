@@ -38,9 +38,23 @@ export default function Board() {
   const [metaText, setMetaText] = useState('로드 중...')
   const [posts, setPosts] = useState([])
   const [author, setAuthor] = useState('')
+  const [rememberNickname, setRememberNickname] = useState(false)
   const [content, setContent] = useState('')
   const [postPassword, setPostPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Load saved nickname from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedNickname = localStorage.getItem('saved_nickname')
+      if (savedNickname) {
+        setAuthor(savedNickname)
+        setRememberNickname(true)
+      }
+    } catch (e) {
+      console.warn('LocalStorage access failed:', e)
+    }
+  }, [])
   const [editing, setEditing] = useState({}) // { postId: { editing: true, value: '...' } }
   const [imagePreview, setImagePreview] = useState(null)
   const [lightboxImage, setLightboxImage] = useState(null)
@@ -470,6 +484,17 @@ export default function Board() {
       if (fileInput) fileInput.value = ''
 
       try {
+        if (rememberNickname && authorVal) {
+          localStorage.setItem('saved_nickname', authorVal)
+        } else {
+          localStorage.removeItem('saved_nickname')
+          setAuthor('')
+        }
+      } catch (e) {
+        console.warn('LocalStorage interaction failed:', e)
+      }
+
+      try {
         if (router && typeof router.replace === 'function') {
           await router.replace({
             pathname: '/board',
@@ -630,6 +655,8 @@ export default function Board() {
                 <WriteForm
                   author={author}
                   setAuthor={setAuthor}
+                  rememberNickname={rememberNickname}
+                  setRememberNickname={setRememberNickname}
                   content={content}
                   setContent={setContent}
                   postPassword={postPassword}
