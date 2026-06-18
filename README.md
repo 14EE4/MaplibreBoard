@@ -260,7 +260,6 @@ pm2 startup
 ## 📂 프로젝트 구조
     MaplibreBoard/
     ├── prisma/            # DB 모델(schema.prisma)
-    ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
     ├── backup/            # 게시판 데이터 CSV 백업 (날짜별 폴더 내 boards.csv, posts.csv 등)
     ├── pages/
     │   ├── api/           # 백엔드 API 핸들러
