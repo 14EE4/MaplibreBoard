@@ -265,8 +265,7 @@ pm2 startup
     │   │   │   └── [...file].js # 업로드된 물리 이미지 파일 보안 서빙 API (NEW)
     │   │   ├── boards.js  # 게시판 기본 조회/생성 API
     │   │   ├── posts.js   # 게시글 CRUD 및 IP/기기 메타데이터 수집 API
-    │   │   ├── upload.js  # 이미지 파일 업로드 처리 API
-    │   │   └── notes.js   # 지도 상 메모(포스트잇) CRUD API
+    │   │   └── upload.js  # 이미지 파일 업로드 처리 API
     │   ├── index.js       # 랜딩 페이지 (전체 피드 버튼 추가)
     │   ├── map.js         # 메인 지도 인터페이스
     │   ├── rasterMap2.js  # 이전 주소(/map) 리다이렉트용
