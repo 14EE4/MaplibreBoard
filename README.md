@@ -149,6 +149,46 @@ pm2 startup
    pm2 logs map-board
    ```
 
+### 7. 피처 브랜치(Feature Branch) 서버 단독 테스트 방법
+메인(`main`) 브랜치에 병합하기 전, 특정 개발 브랜치(예: `49-feature-...`)만 서버로 가져와 독립적으로 빌드하고 테스트하는 절차입니다.
+
+1. **[로컬] 작업 내용 커밋 및 원격 피처 브랜치 푸시**
+   ```bash
+   git add .
+   git commit -m "feat: 개발 내용 요약"
+   git push origin [피처-브랜치-명]
+   ```
+
+2. **[서버] SSH 접속 및 피처 브랜치 체크아웃**
+   서버에서 원격 저장소 정보를 최신화한 후 해당 피처 브랜치로 전환합니다.
+   ```bash
+   # 원격 브랜치 정보 갱신
+   git fetch origin
+   
+   # 특정 피처 브랜치로 전환
+   git checkout [피처-브랜치-명]
+   ```
+
+3. **[서버] 의존성 및 DB 동기화**
+   ```bash
+   npm install
+   npx prisma generate
+   npx prisma db push
+   ```
+
+4. **[서버] 빌드 및 PM2 재기동**
+   ```bash
+   npm run build
+   pm2 reload map-board  # 혹은 pm2 restart map-board
+   ```
+
+5. **[서버] 테스트 종료 후 복구 (선택)**
+   피처 브랜치 검증 완료 후 다시 안정적인 메인(`main`) 브랜치로 되돌리려면 아래 명령어를 실행합니다.
+   ```bash
+   git checkout main
+   pm2 reload map-board
+   ```
+
 ---
 
 ## 🛠 핵심 기능
