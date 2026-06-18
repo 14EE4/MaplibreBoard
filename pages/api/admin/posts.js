@@ -19,9 +19,9 @@ export default async function handler(req, res) {
 
   try {
     console.log('[API LOG] 어드민 전체 게시글 목록 조회 시도');
-    // Fetch all posts including IP
+    // Fetch all posts including IP, os, browser
     const result = await query(`
-      SELECT p.id, p.board_id, p.author, p.content, p.image_url, p.ip, p.created_at, p.updated_at,
+      SELECT p.id, p.board_id, p.author, p.content, p.image_url, p.ip, p.os, p.browser, p.created_at, p.updated_at,
              b.name as board_name, b.grid_x as board_x, b.grid_y as board_y
       FROM posts p
       LEFT JOIN boards b ON p.board_id = b.id
@@ -36,6 +36,8 @@ export default async function handler(req, res) {
       content: p.content,
       image_url: p.image_url,
       ip: p.ip,
+      os: p.os,
+      browser: p.browser,
       created_at: p.created_at,
       updated_at: p.updated_at,
       board_name: p.board_name,

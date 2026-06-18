@@ -1,6 +1,26 @@
 const { query, pool } = require('../../lib/db')
 const crypto = require('crypto')
 
+function parseUA(ua) {
+  if (!ua) return { os: 'Unknown', browser: 'Unknown' };
+  
+  let os = 'Unknown';
+  if (/Windows/i.test(ua)) os = 'Windows';
+  else if (/Android/i.test(ua)) os = 'Android';
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Macintosh|Mac OS X/i.test(ua)) os = 'macOS';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+
+  let browser = 'Unknown';
+  if (/Edg/i.test(ua)) browser = 'Edge';
+  else if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Chrome';
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Safari';
+  else if (/Firefox/i.test(ua)) browser = 'Firefox';
+  else if (/Trident|MSIE/i.test(ua)) browser = 'IE';
+
+  return { os, browser };
+}
+
 // Posts API (unified posts table)
 // GET /api/posts?board_id=1  => list posts for board (if board_id provided) or all posts
 // POST /api/posts  => create { board_id, author, content, password }
@@ -51,6 +71,7 @@ export default async function handler(req, res) {
       const forwarded = req.headers['x-forwarded-for']
       const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
       const userAgent = req.headers['user-agent'] || 'Unknown'
+      const { os, browser } = parseUA(userAgent)
       const timestamp = new Date().toISOString()
 
       console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
@@ -75,13 +96,15 @@ export default async function handler(req, res) {
       const client = await (await pool).connect()
       try {
         await client.query('BEGIN')
-        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url, ip) VALUES($1,$2,$3,$4,$5,$6) RETURNING *'
-        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null, ip || null])
+        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url, ip, os, browser) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *'
+        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null, ip || null, os || null, browser || null])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
         
         const savedPost = insert.rows[0]
         delete savedPost.ip // Securely remove IP from returned response to prevent leakage
+        delete savedPost.os // Securely remove OS from returned response to prevent leakage
+        delete savedPost.browser // Securely remove Browser from returned response to prevent leakage
         
         const successTimestamp = new Date().toISOString()
         console.log(`[${successTimestamp}] [API LOG] [201 Created] 글 작성 완료 (IP: ${ip}, 등록된 글 번호: ${savedPost.id})`)

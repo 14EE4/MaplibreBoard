@@ -445,6 +445,7 @@ export default function Admin() {
                         <th>작성자</th>
                         <th>내용</th>
                         <th>작성자 IP</th>
+                        <th>기기 / 브라우저</th>
                         <th>작성 일시</th>
                         <th>링크</th>
                       </tr>
@@ -463,6 +464,13 @@ export default function Admin() {
                           </td>
                           <td>
                             <code className="ip-badge">{post.ip || '기록 없음'}</code>
+                          </td>
+                          <td>
+                            {post.os && post.browser ? (
+                              <span className="ua-badge">{post.os} / {post.browser}</span>
+                            ) : (
+                              <code className="ip-badge">기록 없음</code>
+                            )}
                           </td>
                           <td>{new Date(post.created_at).toLocaleString()}</td>
                           <td>
