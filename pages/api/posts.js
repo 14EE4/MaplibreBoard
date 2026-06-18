@@ -12,9 +12,10 @@ function parseUA(ua) {
   else if (/Linux/i.test(ua)) os = 'Linux';
 
   let browser = 'Unknown';
-  if (/Edg/i.test(ua)) browser = 'Edge';
-  else if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Chrome';
-  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Safari';
+  if (/Whale/i.test(ua)) browser = 'Whale';
+  else if (/Edg/i.test(ua)) browser = 'Edge';
+  else if (/Chrome/i.test(ua)) browser = 'Chrome';
+  else if (/Safari/i.test(ua)) browser = 'Safari';
   else if (/Firefox/i.test(ua)) browser = 'Firefox';
   else if (/Trident|MSIE/i.test(ua)) browser = 'IE';
 
@@ -73,8 +74,9 @@ export default async function handler(req, res) {
       const userAgent = req.headers['user-agent'] || 'Unknown'
       const { os, browser } = parseUA(userAgent)
       const timestamp = new Date().toISOString()
+      const contentSnippet = content ? (content.length > 20 ? content.substring(0, 20) + '...' : content) : '';
 
-      console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
+      console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, 작성자: ${author || '익명'}, 내용 일부: "${contentSnippet}", UA: ${userAgent})`)
 
       if (!board_id || !content) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 필수값 누락 (IP: ${ip})`)
@@ -102,12 +104,15 @@ export default async function handler(req, res) {
         await client.query('COMMIT')
         
         const savedPost = insert.rows[0]
+        
+        const successTimestamp = new Date().toISOString()
+        const savedContentSnippet = savedPost.content ? (savedPost.content.length > 20 ? savedPost.content.substring(0, 20) + '...' : savedPost.content) : '';
+        console.log(`[${successTimestamp}] [API LOG] [201 Created] 글 작성 완료 (IP: ${ip}, 등록된 글 번호: ${savedPost.id}, 작성자: ${savedPost.author || '익명'}, 내용 일부: "${savedContentSnippet}")`)
+
         delete savedPost.ip // Securely remove IP from returned response to prevent leakage
         delete savedPost.os // Securely remove OS from returned response to prevent leakage
         delete savedPost.browser // Securely remove Browser from returned response to prevent leakage
         
-        const successTimestamp = new Date().toISOString()
-        console.log(`[${successTimestamp}] [API LOG] [201 Created] 글 작성 완료 (IP: ${ip}, 등록된 글 번호: ${savedPost.id})`)
         return res.status(201).json(savedPost)
       } catch (err) {
         await client.query('ROLLBACK')
@@ -124,8 +129,9 @@ export default async function handler(req, res) {
       const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
       const userAgent = req.headers['user-agent'] || 'Unknown'
       const timestamp = new Date().toISOString()
+      const contentSnippet = content ? (content.length > 20 ? content.substring(0, 20) + '...' : content) : '';
 
-      console.log(`[${timestamp}] [API LOG] [PUT] /api/posts - 글 수정 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, UA: ${userAgent})`)
+      console.log(`[${timestamp}] [API LOG] [PUT] /api/posts - 글 수정 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, 작성자: ${author || '익명'}, 내용 일부: "${contentSnippet}", UA: ${userAgent})`)
 
       if (!id || !content) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 필수값 누락 (IP: ${ip})`)
@@ -160,8 +166,10 @@ export default async function handler(req, res) {
       }
       
       const successTimestamp = new Date().toISOString()
-      console.log(`[${successTimestamp}] [API LOG] [200 OK] 글 수정 완료 (IP: ${ip}, 대상 글: ${id})`)
-      return res.status(200).json(result.rows[0])
+      const updatedPost = result.rows[0]
+      const updatedContentSnippet = updatedPost.content ? (updatedPost.content.length > 20 ? updatedPost.content.substring(0, 20) + '...' : updatedPost.content) : '';
+      console.log(`[${successTimestamp}] [API LOG] [200 OK] 글 수정 완료 (IP: ${ip}, 대상 글: ${id}, 작성자: ${updatedPost.author || '익명'}, 내용 일부: "${updatedContentSnippet}")`)
+      return res.status(200).json(updatedPost)
     }
 
     if (method === 'DELETE') {
@@ -175,8 +183,6 @@ export default async function handler(req, res) {
       const userAgent = req.headers['user-agent'] || 'Unknown'
       const timestamp = new Date().toISOString()
 
-      console.log(`[${timestamp}] [API LOG] [DELETE] /api/posts - 글 삭제 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, UA: ${userAgent})`)
-
       if (!id) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 필수값 누락 (IP: ${ip})`)
         return res.status(400).json({ error: 'id required' })
@@ -184,18 +190,22 @@ export default async function handler(req, res) {
 
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
-      const existing = await query('SELECT password, board_id, content FROM posts WHERE id = $1', [Number(id)])
+      const existing = await query('SELECT password, board_id, author, content FROM posts WHERE id = $1', [Number(id)])
       if (!existing || existing.rowCount === 0) {
         console.log(`[${timestamp}] [API LOG] [404 Not Found] 글 삭제 실패 - 존재하지 않는 글 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(404).json({ error: 'not found' })
       }
 
-      if (existing.rows[0].content === '(이 글은 삭제되었습니다)') {
+      const existingPost = existing.rows[0]
+      const existingContentSnippet = existingPost.content ? (existingPost.content.length > 20 ? existingPost.content.substring(0, 20) + '...' : existingPost.content) : '';
+      console.log(`[${timestamp}] [API LOG] [DELETE] /api/posts - 글 삭제 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, 작성자: ${existingPost.author || '익명'}, 내용 일부: "${existingContentSnippet}", UA: ${userAgent})`)
+
+      if (existingPost.content === '(이 글은 삭제되었습니다)') {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 이미 삭제된 글 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(400).json({ error: '이미 삭제된 게시글입니다.' })
       }
 
-      const stored = existing.rows[0].password
+      const stored = existingPost.password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
         console.log(`[${timestamp}] [API LOG] [403 Forbidden] 글 삭제 실패 - 비밀번호 불일치 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
@@ -219,7 +229,7 @@ export default async function handler(req, res) {
         await client.query('COMMIT')
         
         const successTimestamp = new Date().toISOString()
-        console.log(`[${successTimestamp}] [API LOG] [200 OK] 글 삭제 완료 (IP: ${ip}, 대상 글: ${id})`)
+        console.log(`[${successTimestamp}] [API LOG] [200 OK] 글 삭제 완료 (IP: ${ip}, 대상 글: ${id}, 기존 작성자: ${existingPost.author || '익명'})`)
         return res.status(200).json(del.rows[0])
       } catch (err) {
         await client.query('ROLLBACK')
