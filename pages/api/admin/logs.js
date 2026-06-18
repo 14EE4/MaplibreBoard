@@ -39,7 +39,16 @@ export default async function handler(req, res) {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [API LOG] 어드민 PM2 로그 조회 시도`);
 
-    const home = os.homedir();
+    let home = os.homedir();
+    if (process.env.PM2_USER) {
+      if (process.platform === 'win32') {
+        home = path.join('C:\\Users', process.env.PM2_USER);
+      } else {
+        home = process.env.PM2_USER === 'root'
+          ? '/root'
+          : (process.platform === 'darwin' ? path.join('/Users', process.env.PM2_USER) : path.join('/home', process.env.PM2_USER));
+      }
+    }
     const outLogPath = path.join(home, '.pm2/logs/map-board-out.log');
     const errLogPath = path.join(home, '.pm2/logs/map-board-error.log');
 
