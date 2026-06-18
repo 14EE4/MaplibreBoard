@@ -67,6 +67,13 @@ export default function BoardSidebar({ boardMeta, resolvedBoardId, metaText, loa
         <p>💡 <strong>안내:</strong> 격자별 좌표(X, Y) 쿼리 파라미터를 통해 페이지로 다이렉트 접근이 가능합니다.</p>
         <code>예: /board?grid_x=61&grid_y=25</code>
       </div>
+
+      <div className="info-helper-box privacy-notice-box">
+        <p>🔒 <strong>개인정보 및 로그 수집 안내:</strong></p>
+        <p className="privacy-desc">
+          본 서비스는 사용자 익명성을 보장하지만, 시스템 안정성 및 악성 게시물(스팸, 어뷰징 등) 대응을 위해 글 작성/수정/삭제 시점의 IP 주소와 기기 정보(User-Agent)가 백엔드에 안전하게 기록됩니다. 수집된 로그는 일반 이용자에게는 절대 노출되지 않으며 오직 관리자 화면에서만 확인이 가능합니다.
+        </p>
+      </div>
     </aside>
   )
 }
