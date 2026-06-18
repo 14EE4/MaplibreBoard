@@ -3,6 +3,11 @@ const { query } = require('../../lib/db')
 export default async function handler(req, res) {
   const { method } = req
 
+  const forwarded = req.headers['x-forwarded-for']
+  const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
+  const userAgent = req.headers['user-agent'] || 'Unknown'
+  const timestamp = new Date().toISOString()
+
   try {
     if (method === 'GET') {
       // support optional query params for direct lookups
@@ -28,6 +33,9 @@ export default async function handler(req, res) {
     if (method === 'POST') {
       // accept optional grid and center fields so clients can create boards tied to a grid
       const { name, grid_x, grid_y, center_lng, center_lat } = req.body || {}
+      
+      console.log(`[${timestamp}] [API LOG] [POST] /api/boards - 새 게시판 생성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
+
       const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat)
         VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat`
       const params = [name || `board-${Date.now()}`,
@@ -37,13 +45,17 @@ export default async function handler(req, res) {
         center_lat != null ? Number(center_lat) : null
       ]
       const result = await query(insertSql, params)
+      
+      const successTimestamp = new Date().toISOString()
+      console.log(`[${successTimestamp}] [API LOG] [201 Created] 새 게시판 생성 완료 (IP: ${ip}, 보드 ID: ${result.rows[0].id}, 이름: ${result.rows[0].name})`)
       return res.status(201).json(result.rows[0])
     }
 
     res.setHeader('Allow', ['GET', 'POST'])
     res.status(405).end(`Method ${method} Not Allowed`)
   } catch (err) {
-    console.error('boards API error', err)
+    const errorTimestamp = new Date().toISOString()
+    console.error(`[${errorTimestamp}] [API ERROR] boards API error`, err)
     res.status(500).json({ error: 'internal_error' })
   }
 }

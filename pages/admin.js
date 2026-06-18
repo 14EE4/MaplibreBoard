@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
 
 export default function Admin() {
@@ -21,12 +21,19 @@ export default function Admin() {
       setActiveTab('moderation')
     } else if (tabParam === 'boards') {
       setActiveTab('boards')
+    } else if (tabParam === 'posts') {
+      setActiveTab('posts')
+    } else if (tabParam === 'logs') {
+      setActiveTab('logs')
     }
   }, [])
 
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab)
-    const newTabParam = tab === 'moderation' ? 'censorship' : 'boards'
+    let newTabParam = 'boards'
+    if (tab === 'moderation') newTabParam = 'censorship'
+    else if (tab === 'posts') newTabParam = 'posts'
+    else if (tab === 'logs') newTabParam = 'logs'
     try {
       if (router && typeof router.push === 'function') {
         router.push({
@@ -44,6 +51,24 @@ export default function Admin() {
   const [loadingImages, setLoadingImages] = useState(false)
   const [pendingAction, setPendingAction] = useState(null) // { fileName, action, postInfo }
   const [moderationError, setModerationError] = useState('')
+  const [allPosts, setAllPosts] = useState([])
+  const [loadingPosts, setLoadingPosts] = useState(false)
+  const [logs, setLogs] = useState({ out: '', err: '' })
+  const [loadingLogs, setLoadingLogs] = useState(false)
+
+  const stdoutRef = useRef(null)
+  const stderrRef = useRef(null)
+
+  useEffect(() => {
+    if (activeTab === 'logs') {
+      if (stdoutRef.current) {
+        stdoutRef.current.scrollTop = stdoutRef.current.scrollHeight;
+      }
+      if (stderrRef.current) {
+        stderrRef.current.scrollTop = stderrRef.current.scrollHeight;
+      }
+    }
+  }, [logs, activeTab])
 
   useEffect(() => {
     // Check session flags
@@ -87,6 +112,56 @@ export default function Admin() {
     if (!authorized || activeTab !== 'moderation') return
     fetchImages()
   }, [authorized, activeTab])
+
+  useEffect(() => {
+    if (!authorized || activeTab !== 'posts') return
+    fetchPosts()
+  }, [authorized, activeTab])
+
+  useEffect(() => {
+    if (!authorized || activeTab !== 'logs') return
+    fetchLogs()
+  }, [authorized, activeTab])
+
+  async function fetchLogs() {
+    setLoadingLogs(true)
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/logs?auth=${encodeURIComponent(inputPw)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setLogs({ out: data.out, err: data.err })
+      } else {
+        const err = await res.json()
+        setModerationError(err.error || 'PM2 로그를 불러오지 못했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      setModerationError('서버 통신에 실패했습니다.')
+    } finally {
+      setLoadingLogs(false)
+    }
+  }
+
+  async function fetchPosts() {
+    setLoadingPosts(true)
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/posts?auth=${encodeURIComponent(inputPw)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAllPosts(data)
+      } else {
+        const err = await res.json()
+        setModerationError(err.error || '게시글 목록을 불러오지 못했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      setModerationError('서버 통신에 실패했습니다.')
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
 
   async function fetchImages() {
     setLoadingImages(true)
@@ -143,6 +218,8 @@ export default function Admin() {
     setInputPw('')
     setBoards([])
     setImages([])
+    setAllPosts([])
+    setLogs({ out: '', err: '' })
     handleTabChange('boards')
   }
 
@@ -248,6 +325,18 @@ export default function Admin() {
             className={`tab-btn ${activeTab === 'moderation' ? 'active' : ''}`}
           >
             이미지 검열 및 관리
+          </button>
+          <button
+            onClick={() => handleTabChange('posts')}
+            className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
+          >
+            전체 게시글 및 IP 관리
+          </button>
+          <button
+            onClick={() => handleTabChange('logs')}
+            className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`}
+          >
+            실시간 서버 로그
           </button>
         </nav>
 
@@ -373,6 +462,124 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Tab 3: All Posts and IP List */}
+          {activeTab === 'posts' && (
+            <section className="card-section">
+              <div className="section-header">
+                <h2>전체 게시글 및 작성자 IP 목록</h2>
+                <button onClick={fetchPosts} className="btn btn-secondary btn-sm" disabled={loadingPosts}>
+                  새로고침
+                </button>
+              </div>
+
+              {loadingPosts ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>서버에서 게시글을 불러오는 중...</p>
+                </div>
+              ) : allPosts.length === 0 ? (
+                <div className="empty-state">
+                  <p>등록된 게시글이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>글 번호</th>
+                        <th>게시판 이름</th>
+                        <th>작성자</th>
+                        <th>내용</th>
+                        <th>작성자 IP</th>
+                        <th>기기 / 브라우저</th>
+                        <th>작성 일시</th>
+                        <th>링크</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allPosts.map((post) => (
+                        <tr key={post.id}>
+                          <td>#{post.id}</td>
+                          <td>
+                            {post.board_name || '이름 없음'}
+                            {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
+                          </td>
+                          <td><strong>{post.author || '익명'}</strong></td>
+                          <td className="table-post-content" title={post.content}>
+                            {post.content}
+                          </td>
+                          <td>
+                            <code className="ip-badge">{post.ip || '기록 없음'}</code>
+                            {post.location && (
+                              <span className="location-badge">{post.location}</span>
+                            )}
+                          </td>
+                          <td>
+                            {post.os && post.browser ? (
+                              <span className="ua-badge">{post.os} / {post.browser}</span>
+                            ) : (
+                              <code className="ip-badge">기록 없음</code>
+                            )}
+                          </td>
+                          <td>{new Date(post.created_at).toLocaleString()}</td>
+                          <td>
+                            <a
+                              href={`/board?id=${post.board_id}#post-${post.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-link"
+                            >
+                              바로가기
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Tab 4: PM2 System Logs */}
+          {activeTab === 'logs' && (
+            <section className="card-section">
+              <div className="section-header">
+                <h2>실시간 PM2 서버 로그 (마지막 200줄)</h2>
+                <button onClick={fetchLogs} className="btn btn-secondary btn-sm" disabled={loadingLogs}>
+                  새로고침
+                </button>
+              </div>
+
+              {loadingLogs ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>서버에서 로그를 읽어오는 중...</p>
+                </div>
+              ) : (
+                <div className="logs-container">
+                  <div className="log-viewer-box">
+                    <div className="log-viewer-header">
+                      <div className="log-viewer-title title-stdout">표준 출력 로그 (Stdout)</div>
+                    </div>
+                    <pre ref={stdoutRef} className="log-viewer-content">
+                      {logs.out || '로그가 비어 있거나 기록이 없습니다.'}
+                    </pre>
+                  </div>
+
+                  <div className="log-viewer-box">
+                    <div className="log-viewer-header">
+                      <div className="log-viewer-title title-stderr">에러 출력 로그 (Stderr)</div>
+                    </div>
+                    <pre ref={stderrRef} className="log-viewer-content">
+                      {logs.err || '에러 로그가 비어 있거나 기록이 없습니다.'}
+                    </pre>
+                  </div>
                 </div>
               )}
             </section>
