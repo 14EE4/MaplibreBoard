@@ -1,6 +1,7 @@
 const { query, pool } = require('../../lib/db')
 const crypto = require('crypto')
 const geoip = require('geoip-lite')
+const { classifyIP } = require('../../utils/ipClassifier')
 
 function parseUA(ua) {
   if (!ua) return { os: 'Unknown', browser: 'Unknown' };
@@ -77,16 +78,23 @@ export default async function handler(req, res) {
       const { os, browser } = parseUA(userAgent)
       const timestamp = new Date().toISOString()
 
+      const classification = classifyIP(ip);
       let location = null;
-      if (ip) {
-        const geo = geoip.lookup(ip);
-        if (geo) {
-          const country = geo.country || 'Unknown';
-          const city = geo.city || 'Unknown';
-          location = `${country} / ${city}`;
-        } else if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('172.30.')) {
-          location = 'Local';
+      if (classification === '일반 공인 IP') {
+        if (ip) {
+          const geo = geoip.lookup(ip);
+          if (geo) {
+            const country = geo.country || 'Unknown';
+            const city = geo.city || 'Unknown';
+            location = `${country} / ${city}`;
+          } else {
+            location = '일반 공인 IP';
+          }
+        } else {
+          location = '일반 공인 IP';
         }
+      } else {
+        location = classification;
       }
 
       console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
