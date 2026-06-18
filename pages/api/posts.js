@@ -13,6 +13,7 @@ function parseUA(ua) {
 
   let browser = 'Unknown';
   if (/Whale/i.test(ua)) browser = 'Whale';
+  else if (/OPR|Opera/i.test(ua)) browser = 'Opera';
   else if (/Edg/i.test(ua)) browser = 'Edge';
   else if (/Chrome/i.test(ua)) browser = 'Chrome';
   else if (/Safari/i.test(ua)) browser = 'Safari';
