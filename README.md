@@ -286,7 +286,7 @@ pm2 startup
 ## 🚨 확인된 이슈 및 향후 계획 (TODO)
 - [x] 런타임 이미지 404 에러 해결 (캐시 우회 및 동적 서빙): [troubleshooting.md](./troubleshooting.md) 문서 참고
 - [x] 모바일 환경 이미지 업로드 이슈 해결: 모바일 브라우저의 `<label>` 클릭 전달 버그 해결, HEIC/HEIF 이미지 자동 JPEG 변환 및 모바일 대용량 이미지 클라이언트 측 압축 적용
-- [x] 백엔드 API 로그(console.log/console.error) 강화: 주요 API(글 작성, 어드민 인증) 요청 및 성공 시점에 명시적인 `[API LOG]`를 추가하고, 모든 API catch 블록에 `[API ERROR]` 식별자를 포함한 에러 스택 트레이스를 기록하여 PM2 운영 편의성 증대
+- [x] 백엔드 API 로그(console.log/console.error) 5W1H 감사 로깅 강화: 자세한 로깅 사양 및 구성은 [logging.md](./logging.md) 문서 참고
 - [ ] 0,0 좌표 보정: 특정 좌표 클릭 시 비정상 이동 문제 디버깅
 - [ ] 검색 기능 강화: 지명 검색을 통한 위치 이동(flyTo) 기능 도입
 - [ ] 백업 자동화: 정기적인 데이터베이스 백업 스크립트 개선

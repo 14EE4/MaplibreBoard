@@ -46,7 +46,14 @@ export default async function handler(req, res) {
 
     if (method === 'POST') {
       const { board_id, author, content, password, image_url } = req.body
-      console.log(`[API LOG] 새 글 요청 들어옴 - 제목(내용 일부): ${content ? content.substring(0, 20) : ''}`)
+
+      // Extract real client IP (Nginx proxy pass environments set x-forwarded-for)
+      const forwarded = req.headers['x-forwarded-for']
+      const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
+      const timestamp = new Date().toISOString()
+
+      console.log(`[${timestamp}] [API LOG] 새 글 요청 들어옴 - IP: ${ip}, 제목(내용 일부): ${content ? content.substring(0, 20) : ''}`)
+
       if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
       if (author && author.length > 20) {
         return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
@@ -62,11 +69,6 @@ export default async function handler(req, res) {
       const client = await (await pool).connect()
       try {
         await client.query('BEGIN')
-        
-        // Extract real client IP (Nginx proxy pass environments set x-forwarded-for)
-        const forwarded = req.headers['x-forwarded-for']
-        const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
-
         const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url, ip) VALUES($1,$2,$3,$4,$5,$6) RETURNING *'
         const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null, ip || null])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
@@ -75,7 +77,8 @@ export default async function handler(req, res) {
         const savedPost = insert.rows[0]
         delete savedPost.ip // Securely remove IP from returned response to prevent leakage
         
-        console.log(`[API LOG] 글 작성 완료! 등록된 글 번호: ${savedPost.id}`)
+        const successTimestamp = new Date().toISOString()
+        console.log(`[${successTimestamp}] [API LOG] 글 작성 완료! IP: ${ip}, 등록된 글 번호: ${savedPost.id}`)
         return res.status(201).json(savedPost)
       } catch (err) {
         await client.query('ROLLBACK')
@@ -87,25 +90,48 @@ export default async function handler(req, res) {
 
     if (method === 'PUT') {
       const { id, author, content, password } = req.body
-      if (!id || !content) return res.status(400).json({ error: 'id and content required' })
+      
+      const forwarded = req.headers['x-forwarded-for']
+      const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
+      const userAgent = req.headers['user-agent'] || 'Unknown'
+      const timestamp = new Date().toISOString()
+
+      console.log(`[${timestamp}] [API LOG] [PUT] /api/posts - 글 수정 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, UA: ${userAgent})`)
+
+      if (!id || !content) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 필수값 누락 (IP: ${ip})`)
+        return res.status(400).json({ error: 'id and content required' })
+      }
       if (author && author.length > 20) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 닉네임 길이 초과 (IP: ${ip})`)
         return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
       }
       if (content && content.length > 1000) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 내용 길이 초과 (IP: ${ip})`)
         return res.status(400).json({ error: '내용은 최대 1000자까지 입력 가능합니다.' })
       }
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
       // Verify existing post password before updating to prevent unauthorized edits
       const existing = await query('SELECT password FROM posts WHERE id = $1', [Number(id)])
-      if (!existing || existing.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      if (!existing || existing.rowCount === 0) {
+        console.log(`[${timestamp}] [API LOG] [404 Not Found] 글 수정 실패 - 존재하지 않는 글 (IP: ${ip}, 대상 글: ${id})`)
+        return res.status(404).json({ error: 'not found' })
+      }
       const stored = existing.rows[0].password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
+        console.log(`[${timestamp}] [API LOG] [403 Forbidden] 글 수정 실패 - 비밀번호 불일치 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
       }
 
       const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, hashed, id])
-      if (!result || result.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      if (!result || result.rowCount === 0) {
+        console.log(`[${timestamp}] [API LOG] [404 Not Found] 글 수정 실패 - 업데이트 실패 (IP: ${ip}, 대상 글: ${id})`)
+        return res.status(404).json({ error: 'not found' })
+      }
+      
+      const successTimestamp = new Date().toISOString()
+      console.log(`[${successTimestamp}] [API LOG] [200 OK] 글 수정 완료 (IP: ${ip}, 대상 글: ${id})`)
       return res.status(200).json(result.rows[0])
     }
 
@@ -114,19 +140,35 @@ export default async function handler(req, res) {
       const body = req.body || {}
       const id = req.query.id || body.id
       const password = body.password || null
-      if (!id) return res.status(400).json({ error: 'id required' })
+      
+      const forwarded = req.headers['x-forwarded-for']
+      const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
+      const userAgent = req.headers['user-agent'] || 'Unknown'
+      const timestamp = new Date().toISOString()
+
+      console.log(`[${timestamp}] [API LOG] [DELETE] /api/posts - 글 삭제 요청 들어옴 (IP: ${ip}, 대상 글: ${id}, UA: ${userAgent})`)
+
+      if (!id) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 필수값 누락 (IP: ${ip})`)
+        return res.status(400).json({ error: 'id required' })
+      }
 
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
       const existing = await query('SELECT password, board_id, content FROM posts WHERE id = $1', [Number(id)])
-      if (!existing || existing.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      if (!existing || existing.rowCount === 0) {
+        console.log(`[${timestamp}] [API LOG] [404 Not Found] 글 삭제 실패 - 존재하지 않는 글 (IP: ${ip}, 대상 글: ${id})`)
+        return res.status(404).json({ error: 'not found' })
+      }
 
       if (existing.rows[0].content === '(이 글은 삭제되었습니다)') {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 이미 삭제된 글 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(400).json({ error: '이미 삭제된 게시글입니다.' })
       }
 
       const stored = existing.rows[0].password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
+        console.log(`[${timestamp}] [API LOG] [403 Forbidden] 글 삭제 실패 - 비밀번호 불일치 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
       }
 
@@ -140,11 +182,15 @@ export default async function handler(req, res) {
         )
         if (del.rowCount === 0) {
           await client.query('ROLLBACK')
+          console.log(`[${timestamp}] [API LOG] [404 Not Found] 글 삭제 실패 - 업데이트 실패 (IP: ${ip}, 대상 글: ${id})`)
           return res.status(404).json({ error: 'not found' })
         }
         const boardId = del.rows[0].board_id
         await client.query('UPDATE boards SET posts_count = GREATEST(posts_count - 1, 0) WHERE id = $1', [boardId])
         await client.query('COMMIT')
+        
+        const successTimestamp = new Date().toISOString()
+        console.log(`[${successTimestamp}] [API LOG] [200 OK] 글 삭제 완료 (IP: ${ip}, 대상 글: ${id})`)
         return res.status(200).json(del.rows[0])
       } catch (err) {
         await client.query('ROLLBACK')
