@@ -498,7 +498,6 @@ export default function Admin() {
                         <th>작성자 IP</th>
                         <th>기기 / 브라우저</th>
                         <th>작성 일시</th>
-                        <th>링크</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -543,16 +542,6 @@ export default function Admin() {
                             )}
                           </td>
                           <td>{new Date(post.created_at).toLocaleString()}</td>
-                          <td>
-                            <a
-                              href={`/board?id=${post.board_id}#post-${post.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-link"
-                            >
-                              바로가기
-                            </a>
-                          </td>
                         </tr>
                       ))}
                     </tbody>
