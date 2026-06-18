@@ -251,11 +251,22 @@ pm2 startup
     ├── migrations/        # SQL 초기화 스크립트 (neon_init.sql)
     ├── backup/            # 게시판 데이터 CSV 백업 (날짜별 폴더 내 boards.csv, posts.csv 등)
     ├── pages/
-    │   ├── api/           # 보드/게시글 CRUD API
-    │   │   ├── admin/
+    │   ├── api/           # 백엔드 API 핸들러
+    │   │   ├── admin/     # 어드민 전용 API
     │   │   │   ├── images.js # 어드민 이미지 조회 및 검열 API (NEW)
+    │   │   │   ├── logs.js   # 어드민 PM2 로그 실시간 조회 API (NEW)
+    │   │   │   ├── posts.js  # 어드민 전체 게시글 목록(IP/기기 포함) 조회 API (NEW)
     │   │   │   └── verify.js # 관리자 비밀번호 서버 사이드 검증 API (NEW)
-    │   │   └── ...
+    │   │   ├── boards/    # 게시판 보조 API
+    │   │   │   └── grid/[gridX]/[gridY]/ensure.js # 격자 좌표 기준 게시판 자동 생성 및 확인 API
+    │   │   ├── posts/     # 게시글 보조 API
+    │   │   │   └── verify.js # 개별 게시글 비밀번호 권한 검증 API (NEW)
+    │   │   ├── uploads/   # 업로드 파일 서빙 API
+    │   │   │   └── [...file].js # 업로드된 물리 이미지 파일 보안 서빙 API (NEW)
+    │   │   ├── boards.js  # 게시판 기본 조회/생성 API
+    │   │   ├── posts.js   # 게시글 CRUD 및 IP/기기 메타데이터 수집 API
+    │   │   ├── upload.js  # 이미지 파일 업로드 처리 API
+    │   │   └── notes.js   # 지도 상 메모(포스트잇) CRUD API
     │   ├── index.js       # 랜딩 페이지 (전체 피드 버튼 추가)
     │   ├── map.js         # 메인 지도 인터페이스
     │   ├── rasterMap2.js  # 이전 주소(/map) 리다이렉트용
