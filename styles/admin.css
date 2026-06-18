@@ -655,3 +655,97 @@ body {
   white-space: nowrap;
 }
 
+/* Location Badge next to IP address */
+.location-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* System Logs Dashboard */
+.logs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.log-viewer-box {
+  background: #090d16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.log-viewer-header {
+  background: rgba(17, 24, 39, 0.8);
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.log-viewer-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.log-viewer-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.title-stdout::before {
+  background-color: #10b981; /* Green dot for stdout */
+}
+
+.title-stderr::before {
+  background-color: #ef4444; /* Red dot for stderr */
+}
+
+.log-viewer-content {
+  margin: 0;
+  padding: 20px;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e5e7eb;
+  height: 350px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-viewer-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-viewer-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.log-viewer-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.log-viewer-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+

@@ -1,5 +1,6 @@
 const { query, pool } = require('../../lib/db')
 const crypto = require('crypto')
+const geoip = require('geoip-lite')
 
 function parseUA(ua) {
   if (!ua) return { os: 'Unknown', browser: 'Unknown' };
@@ -77,6 +78,18 @@ export default async function handler(req, res) {
       const timestamp = new Date().toISOString()
       const contentSnippet = content ? (content.length > 20 ? content.substring(0, 20) + '...' : content) : '';
 
+      let location = null;
+      if (ip) {
+        const geo = geoip.lookup(ip);
+        if (geo) {
+          const country = geo.country || 'Unknown';
+          const city = geo.city || 'Unknown';
+          location = `${country} / ${city}`;
+        } else if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('172.30.')) {
+          location = 'Local';
+        }
+      }
+
       console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, 작성자: ${author || '익명'}, 내용 일부: "${contentSnippet}", UA: ${userAgent})`)
 
       if (!board_id || !content) {
@@ -99,8 +112,8 @@ export default async function handler(req, res) {
       const client = await (await pool).connect()
       try {
         await client.query('BEGIN')
-        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url, ip, os, browser) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *'
-        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null, ip || null, os || null, browser || null])
+        const insertSql = 'INSERT INTO posts (board_id, author, content, password, image_url, ip, os, browser, location) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *'
+        const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null, ip || null, os || null, browser || null, location || null])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
         
@@ -113,6 +126,7 @@ export default async function handler(req, res) {
         delete savedPost.ip // Securely remove IP from returned response to prevent leakage
         delete savedPost.os // Securely remove OS from returned response to prevent leakage
         delete savedPost.browser // Securely remove Browser from returned response to prevent leakage
+        delete savedPost.location // Securely remove Location from returned response to prevent leakage
         
         return res.status(201).json(savedPost)
       } catch (err) {

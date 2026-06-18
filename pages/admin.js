@@ -23,6 +23,8 @@ export default function Admin() {
       setActiveTab('boards')
     } else if (tabParam === 'posts') {
       setActiveTab('posts')
+    } else if (tabParam === 'logs') {
+      setActiveTab('logs')
     }
   }, [])
 
@@ -31,6 +33,7 @@ export default function Admin() {
     let newTabParam = 'boards'
     if (tab === 'moderation') newTabParam = 'censorship'
     else if (tab === 'posts') newTabParam = 'posts'
+    else if (tab === 'logs') newTabParam = 'logs'
     try {
       if (router && typeof router.push === 'function') {
         router.push({
@@ -50,6 +53,8 @@ export default function Admin() {
   const [moderationError, setModerationError] = useState('')
   const [allPosts, setAllPosts] = useState([])
   const [loadingPosts, setLoadingPosts] = useState(false)
+  const [logs, setLogs] = useState({ out: '', err: '' })
+  const [loadingLogs, setLoadingLogs] = useState(false)
 
   useEffect(() => {
     // Check session flags
@@ -98,6 +103,31 @@ export default function Admin() {
     if (!authorized || activeTab !== 'posts') return
     fetchPosts()
   }, [authorized, activeTab])
+
+  useEffect(() => {
+    if (!authorized || activeTab !== 'logs') return
+    fetchLogs()
+  }, [authorized, activeTab])
+
+  async function fetchLogs() {
+    setLoadingLogs(true)
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/logs?auth=${encodeURIComponent(inputPw)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setLogs({ out: data.out, err: data.err })
+      } else {
+        const err = await res.json()
+        setModerationError(err.error || 'PM2 로그를 불러오지 못했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      setModerationError('서버 통신에 실패했습니다.')
+    } finally {
+      setLoadingLogs(false)
+    }
+  }
 
   async function fetchPosts() {
     setLoadingPosts(true)
@@ -175,6 +205,7 @@ export default function Admin() {
     setBoards([])
     setImages([])
     setAllPosts([])
+    setLogs({ out: '', err: '' })
     handleTabChange('boards')
   }
 
@@ -286,6 +317,12 @@ export default function Admin() {
             className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
           >
             전체 게시글 및 IP 관리
+          </button>
+          <button
+            onClick={() => handleTabChange('logs')}
+            className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`}
+          >
+            실시간 서버 로그
           </button>
         </nav>
 
@@ -464,6 +501,9 @@ export default function Admin() {
                           </td>
                           <td>
                             <code className="ip-badge">{post.ip || '기록 없음'}</code>
+                            {post.location && (
+                              <span className="location-badge">{post.location}</span>
+                            )}
                           </td>
                           <td>
                             {post.os && post.browser ? (
@@ -487,6 +527,45 @@ export default function Admin() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Tab 4: PM2 System Logs */}
+          {activeTab === 'logs' && (
+            <section className="card-section">
+              <div className="section-header">
+                <h2>실시간 PM2 서버 로그 (마지막 200줄)</h2>
+                <button onClick={fetchLogs} className="btn btn-secondary btn-sm" disabled={loadingLogs}>
+                  새로고침
+                </button>
+              </div>
+
+              {loadingLogs ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>서버에서 로그를 읽어오는 중...</p>
+                </div>
+              ) : (
+                <div className="logs-container">
+                  <div className="log-viewer-box">
+                    <div className="log-viewer-header">
+                      <div className="log-viewer-title title-stdout">표준 출력 로그 (Stdout)</div>
+                    </div>
+                    <pre className="log-viewer-content">
+                      {logs.out || '로그가 비어 있거나 기록이 없습니다.'}
+                    </pre>
+                  </div>
+
+                  <div className="log-viewer-box">
+                    <div className="log-viewer-header">
+                      <div className="log-viewer-title title-stderr">에러 출력 로그 (Stderr)</div>
+                    </div>
+                    <pre className="log-viewer-content">
+                      {logs.err || '에러 로그가 비어 있거나 기록이 없습니다.'}
+                    </pre>
+                  </div>
                 </div>
               )}
             </section>

@@ -33,6 +33,7 @@ model posts {
   ip         String?  @db.VarChar(45)
   os         String?  @db.VarChar(50)
   browser    String?  @db.VarChar(50)
+  location   String?  @db.VarChar(100)
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
   boards     boards?  @relation(fields: [board_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
