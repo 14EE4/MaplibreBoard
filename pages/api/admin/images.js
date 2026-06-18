@@ -150,7 +150,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'DELETE']);
     return res.status(405).end(`Method ${method} Not Allowed`);
   } catch (error) {
-    console.error('Admin Images API Error:', error);
+    console.error('[API ERROR] Admin Images API Error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

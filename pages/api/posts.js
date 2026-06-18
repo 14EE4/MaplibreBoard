@@ -39,6 +39,7 @@ export default async function handler(req, res) {
 
     if (method === 'POST') {
       const { board_id, author, content, password, image_url } = req.body
+      console.log(`[API LOG] 새 글 요청 들어옴 - 제목(내용 일부): ${content ? content.substring(0, 20) : ''}`)
       if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
       if (author && author.length > 20) {
         return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
@@ -58,6 +59,7 @@ export default async function handler(req, res) {
         const insert = await client.query(insertSql, [board_id, author || null, content, hashed, image_url || null])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
+        console.log(`[API LOG] 글 작성 완료! 등록된 글 번호: ${insert.rows[0].id}`)
         return res.status(201).json(insert.rows[0])
       } catch (err) {
         await client.query('ROLLBACK')
@@ -139,7 +141,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE'])
     res.status(405).end(`Method ${method} Not Allowed`)
   } catch (err) {
-    console.error('posts API error', err)
+    console.error('[API ERROR] posts API error', err)
     res.status(500).json({ error: 'internal_error' })
   }
 }

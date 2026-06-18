@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE'])
     res.status(405).end(`Method ${method} Not Allowed`)
   } catch (err) {
-    console.error('notes API error', err)
+    console.error('[API ERROR] notes API error', err)
     res.status(500).json({ error: 'internal_error' })
   }
 }
