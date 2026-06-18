@@ -367,6 +367,8 @@ body {
 .post-footer {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   font-size: 12px;
 }
 

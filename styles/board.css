@@ -360,6 +360,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   font-size: 13px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   padding-bottom: 8px;
@@ -368,6 +370,7 @@ body {
 .post-header-left {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
