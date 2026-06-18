@@ -40,7 +40,8 @@ export default async function handler(req, res) {
       client.release()
     }
   } catch (err) {
-    console.error('[API ERROR] ensure board error', err)
+    const errorTimestamp = new Date().toISOString()
+    console.error(`[${errorTimestamp}] [API ERROR] ensure board error`, err)
     res.status(500).json({ error: 'internal_error' })
   }
 }
