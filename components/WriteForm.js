@@ -3,6 +3,8 @@ import React, { useEffect, useRef } from 'react'
 export default function WriteForm({
   author,
   setAuthor,
+  rememberNickname,
+  setRememberNickname,
   content,
   setContent,
   postPassword,
@@ -28,14 +30,25 @@ export default function WriteForm({
     <div className="write-card">
       <h3>새 글 작성</h3>
       <div className="write-form">
-        <input 
-          id="author" 
-          placeholder="작성자 닉네임 (선택 - 최대 20자)" 
-          maxLength={20}
-          value={author} 
-          onChange={e => setAuthor(e.target.value)} 
-          className="input-field" 
-        />
+        <div className="author-container">
+          <input 
+            id="author" 
+            placeholder="작성자 닉네임 (선택 - 최대 20자)" 
+            maxLength={20}
+            value={author} 
+            onChange={e => setAuthor(e.target.value)} 
+            className="input-field" 
+          />
+          <label className="remember-nickname-label">
+            <input 
+              type="checkbox" 
+              checked={rememberNickname}
+              onChange={e => setRememberNickname(e.target.checked)}
+              className="checkbox-field"
+            />
+            닉네임 기억하기
+          </label>
+        </div>
         <div className="textarea-container" style={{ position: 'relative' }}>
           <textarea 
             id="content" 
