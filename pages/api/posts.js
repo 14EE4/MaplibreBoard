@@ -50,15 +50,21 @@ export default async function handler(req, res) {
       // Extract real client IP (Nginx proxy pass environments set x-forwarded-for)
       const forwarded = req.headers['x-forwarded-for']
       const ip = forwarded ? forwarded.split(',')[0].trim() : req.socket.remoteAddress
+      const userAgent = req.headers['user-agent'] || 'Unknown'
       const timestamp = new Date().toISOString()
 
-      console.log(`[${timestamp}] [API LOG] 새 글 요청 들어옴 - IP: ${ip}, 제목(내용 일부): ${content ? content.substring(0, 20) : ''}`)
+      console.log(`[${timestamp}] [API LOG] [POST] /api/posts - 새 글 작성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
 
-      if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
+      if (!board_id || !content) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 필수값 누락 (IP: ${ip})`)
+        return res.status(400).json({ error: 'board_id and content required' })
+      }
       if (author && author.length > 20) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 닉네임 길이 초과 (IP: ${ip})`)
         return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
       }
       if (content && content.length > 1000) {
+        console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 내용 길이 초과 (IP: ${ip})`)
         return res.status(400).json({ error: '내용은 최대 1000자까지 입력 가능합니다.' })
       }
 
@@ -78,7 +84,7 @@ export default async function handler(req, res) {
         delete savedPost.ip // Securely remove IP from returned response to prevent leakage
         
         const successTimestamp = new Date().toISOString()
-        console.log(`[${successTimestamp}] [API LOG] 글 작성 완료! IP: ${ip}, 등록된 글 번호: ${savedPost.id}`)
+        console.log(`[${successTimestamp}] [API LOG] [201 Created] 글 작성 완료 (IP: ${ip}, 등록된 글 번호: ${savedPost.id})`)
         return res.status(201).json(savedPost)
       } catch (err) {
         await client.query('ROLLBACK')
