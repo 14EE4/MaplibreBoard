@@ -367,6 +367,8 @@ body {
 .post-footer {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   font-size: 12px;
 }
 
@@ -381,6 +383,8 @@ body {
 
 .post-date {
   color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .orphan-desc {

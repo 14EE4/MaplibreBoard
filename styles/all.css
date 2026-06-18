@@ -93,6 +93,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   margin-bottom: 16px;
   font-size: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
@@ -102,6 +104,7 @@ body {
 .card-header-left {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -128,6 +131,8 @@ body {
 
 .post-date {
   color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .card-body {

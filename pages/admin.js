@@ -498,16 +498,31 @@ export default function Admin() {
                         <th>작성자 IP</th>
                         <th>기기 / 브라우저</th>
                         <th>작성 일시</th>
-                        <th>링크</th>
                       </tr>
                     </thead>
                     <tbody>
                       {allPosts.map((post) => (
                         <tr key={post.id}>
-                          <td>#{post.id}</td>
                           <td>
-                            {post.board_name || '이름 없음'}
-                            {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
+                            <a
+                              href={`/board?id=${post.board_id}#post-${post.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-link"
+                            >
+                              #{post.id}
+                            </a>
+                          </td>
+                          <td>
+                            <a
+                              href={`/board?id=${post.board_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-link"
+                            >
+                              {post.board_name || '이름 없음'}
+                              {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
+                            </a>
                           </td>
                           <td><strong>{post.author || '익명'}</strong></td>
                           <td className="table-post-content" title={post.content}>
@@ -527,16 +542,6 @@ export default function Admin() {
                             )}
                           </td>
                           <td>{new Date(post.created_at).toLocaleString()}</td>
-                          <td>
-                            <a
-                              href={`/board?id=${post.board_id}#post-${post.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-link"
-                            >
-                              바로가기
-                            </a>
-                          </td>
                         </tr>
                       ))}
                     </tbody>
