@@ -230,8 +230,8 @@ export default function AllFeedPage() {
       <main className="feed-container">
         {/* Header */}
         <header className="feed-header">
-          <button onClick={() => window.location.href = '/'} className="btn-back">
-            ← Home
+          <button onClick={() => window.location.href = '/'} className="btn-back" title="Home">
+            🏠
           </button>
           <div className="header-title-wrapper">
             <h1 className="feed-title">All Feed</h1>
