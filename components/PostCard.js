@@ -145,8 +145,8 @@ export default function PostCard({
             </div>
           ) : (
             <div className="action-buttons">
-              <button onClick={() => verifyAndEdit(post.id)} className="btn btn-secondary btn-sm mr-2">수정</button>
-              <button onClick={() => deletePost(post.id)} className="btn btn-danger-outline btn-sm">삭제</button>
+              <button onClick={() => verifyAndEdit(post.id)} className="btn btn-secondary btn-sm mr-2" title="수정">🛠️</button>
+              <button onClick={() => deletePost(post.id)} className="btn btn-danger-outline btn-sm" title="삭제">🗑️</button>
             </div>
           )}
         </div>

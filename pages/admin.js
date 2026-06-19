@@ -283,7 +283,7 @@ export default function Admin() {
                 className="input-field"
                 required
               />
-              <button type="submit" className="btn btn-primary btn-block">로그인</button>
+              <button type="submit" className="btn btn-primary btn-block" title="관리자 인증">🔒</button>
             </form>
             {error && <p className="error-msg">{error}</p>}
           </div>

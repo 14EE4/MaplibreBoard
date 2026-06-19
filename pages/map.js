@@ -230,7 +230,7 @@ export default function MapPage() {
 
         const sizeGroup = document.createElement('div')
         sizeGroup.className = 'control-group'
-        const sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'
+        const sizeLabel = document.createElement('span'); sizeLabel.textContent = '🌐'; sizeLabel.title = '격자 크기'
         const sizeSelect = document.createElement('select')
         const sizes = [0.25, 0.5, 1, 2, 5, 10, 20]
         sizes.forEach(function(s){ const opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); })
@@ -241,7 +241,7 @@ export default function MapPage() {
 
         const modeGroup = document.createElement('div')
         modeGroup.className = 'control-group'
-        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'
+        const modeLabel = document.createElement('span'); modeLabel.textContent = '🗺️'; modeLabel.title = '지도 변경'
         const modeSelect = document.createElement('select')
         ;['osm','sat','globe'].forEach(function(m){ const o = document.createElement('option'); o.value = m; o.text = (m==='osm'?'OpenStreetMap':m==='sat'?'Satellite':'Globe (vector)'); modeSelect.appendChild(o) })
         try { if (currentMode) modeSelect.value = currentMode } catch(e){}

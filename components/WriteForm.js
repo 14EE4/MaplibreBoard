@@ -112,8 +112,8 @@ export default function WriteForm({
             <span className="pwd-helper">* 입력 시 추후 수정/삭제 가능</span>
           </div>
           
-          <button id="submitPost" onClick={submitPost} disabled={loading} className="btn btn-primary">
-            {loading ? '전송 중...' : '게시글 등록'}
+          <button id="submitPost" onClick={submitPost} disabled={loading} className="btn btn-primary" title="글쓰기">
+            {loading ? '전송 중...' : '✏️'}
           </button>
         </div>
       </div>
