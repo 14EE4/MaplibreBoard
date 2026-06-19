@@ -28,12 +28,12 @@ export default function WriteForm({
 
   return (
     <div className="write-card">
-      <h3>새 글 작성</h3>
+      <h3>New Post</h3>
       <div className="write-form">
         <div className="author-container">
           <input 
             id="author" 
-            placeholder="작성자 닉네임 (선택 - 최대 20자)" 
+            placeholder="Nickname (Optional - Max 20 chars)" 
             maxLength={20}
             value={author} 
             onChange={e => setAuthor(e.target.value)} 
@@ -46,14 +46,14 @@ export default function WriteForm({
               onChange={e => setRememberNickname(e.target.checked)}
               className="checkbox-field"
             />
-            닉네임 기억하기
+            Remember Nickname
           </label>
         </div>
         <div className="textarea-container" style={{ position: 'relative' }}>
           <textarea 
             id="content" 
             ref={textareaRef}
-            placeholder="따뜻한 한 마디를 적어보세요... (Ctrl+Enter로 즉시 전송)" 
+            placeholder="Write a message... (Ctrl+Enter to submit)" 
             value={content} 
             maxLength={1000}
             onChange={e => setContent(e.target.value)} 
@@ -76,15 +76,15 @@ export default function WriteForm({
               disabled={loading}
               className="btn btn-secondary btn-sm upload-btn"
             >
-              📷 사진 첨부하기
+              📷 Add Photo
             </button>
             <input id="imageInput" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
             
             {imagePreview && (
               <div className="image-preview-box">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imagePreview} alt="업로드 미리보기" className="preview-img" />
-                <button onClick={handleRemoveImage} className="remove-preview-btn" title="사진 제거">
+                <img src={imagePreview} alt="Upload preview" className="preview-img" />
+                <button onClick={handleRemoveImage} className="remove-preview-btn" title="Remove Photo">
                   ✕
                 </button>
               </div>
@@ -102,18 +102,18 @@ export default function WriteForm({
             <input 
               id="postPassword" 
               type="password"
-              placeholder="수정용 비밀번호 (선택)" 
+              placeholder="Password (Optional)" 
               maxLength={4} 
               value={postPassword} 
               onChange={e => setPostPassword(e.target.value)} 
               onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }}
               className="input-field pwd-field" 
             />
-            <span className="pwd-helper">* 입력 시 추후 수정/삭제 가능</span>
+            <span className="pwd-helper">* Set password to edit/delete</span>
           </div>
           
-          <button id="submitPost" onClick={submitPost} disabled={loading} className="btn btn-primary">
-            {loading ? '전송 중...' : '게시글 등록'}
+          <button id="submitPost" onClick={submitPost} disabled={loading} className="btn btn-primary" title="Post">
+            {loading ? 'Submitting...' : '✏️'}
           </button>
         </div>
       </div>

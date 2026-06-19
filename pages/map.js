@@ -206,13 +206,13 @@ export default function MapPage() {
               fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
               })
-              .then(function(res){ if (!res.ok) throw new Error('서버 에러'); return res.json() })
+              .then(function(res){ if (!res.ok) throw new Error('Server Error'); return res.json() })
               .then(function(data){
                 // Navigate using grid query format
                 window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
                 try { updateBoardsOverlay() } catch(e) {}
               })
-              .catch(function(err){ console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인') })
+              .catch(function(err){ console.error('grid ensure error', err); alert('Failed to open/create board. Check console.') })
             } catch (err) { console.error('grid click handler failed', err) }
           })
         }
@@ -230,7 +230,7 @@ export default function MapPage() {
 
         const sizeGroup = document.createElement('div')
         sizeGroup.className = 'control-group'
-        const sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'
+        const sizeLabel = document.createElement('span'); sizeLabel.textContent = '🌐'; sizeLabel.title = 'Grid Size'
         const sizeSelect = document.createElement('select')
         const sizes = [0.25, 0.5, 1, 2, 5, 10, 20]
         sizes.forEach(function(s){ const opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); })
@@ -241,7 +241,7 @@ export default function MapPage() {
 
         const modeGroup = document.createElement('div')
         modeGroup.className = 'control-group'
-        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'
+        const modeLabel = document.createElement('span'); modeLabel.textContent = '🗺️'; modeLabel.title = 'Change Map'
         const modeSelect = document.createElement('select')
         ;['osm','sat','globe'].forEach(function(m){ const o = document.createElement('option'); o.value = m; o.text = (m==='osm'?'OpenStreetMap':m==='sat'?'Satellite':'Globe (vector)'); modeSelect.appendChild(o) })
         try { if (currentMode) modeSelect.value = currentMode } catch(e){}

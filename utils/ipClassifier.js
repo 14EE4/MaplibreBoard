@@ -56,30 +56,30 @@ const rangesLong = {
 
 function classifyIP(rawIp) {
   const ip = normalizeIP(rawIp);
-  if (!ip) return '일반 공인 IP';
-  if (ip === '::1' || ip === '127.0.0.1') return '사설 IP';
+  if (!ip) return 'Public IP';
+  if (ip === '::1' || ip === '127.0.0.1') return 'Private IP';
 
   const ipv4Pattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
   if (!ipv4Pattern.test(ip)) {
-    return '일반 공인 IP';
+    return 'Public IP';
   }
 
   const ipLong = ipToLong(ip);
 
   for (const [start, end] of rangesLong.Private) {
-    if (ipLong >= start && ipLong <= end) return '사설 IP';
+    if (ipLong >= start && ipLong <= end) return 'Private IP';
   }
   for (const [start, end] of rangesLong.SKT) {
-    if (ipLong >= start && ipLong <= end) return 'SKT 모바일';
+    if (ipLong >= start && ipLong <= end) return 'SKT Mobile';
   }
   for (const [start, end] of rangesLong.KT) {
-    if (ipLong >= start && ipLong <= end) return 'KT 모바일';
+    if (ipLong >= start && ipLong <= end) return 'KT Mobile';
   }
   for (const [start, end] of rangesLong.LGU) {
-    if (ipLong >= start && ipLong <= end) return 'LGU+ 모바일';
+    if (ipLong >= start && ipLong <= end) return 'LGU+ Mobile';
   }
 
-  return '일반 공인 IP';
+  return 'Public IP';
 }
 
 module.exports = {

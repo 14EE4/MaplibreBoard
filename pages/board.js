@@ -35,7 +35,7 @@ export default function Board() {
 
   const [resolvedBoardId, setResolvedBoardId] = useState(null)
   const [boardMeta, setBoardMeta] = useState(null)
-  const [metaText, setMetaText] = useState('로드 중...')
+  const [metaText, setMetaText] = useState('Loading...')
   const [posts, setPosts] = useState([])
   const [author, setAuthor] = useState('')
   const [rememberNickname, setRememberNickname] = useState(false)
@@ -118,7 +118,7 @@ export default function Board() {
     } else {
       fetch(`/api/posts?id=${targetId}`)
         .then(res => {
-          if (!res.ok) throw new Error('존재하지 않는 게시글입니다.')
+          if (!res.ok) throw new Error('This post does not exist.')
           return res.json()
         })
         .then(post => {
@@ -163,7 +163,7 @@ export default function Board() {
     } else {
       fetch(`/api/posts?id=${targetId}`)
         .then(res => {
-          if (!res.ok) throw new Error('게시글을 찾을 수 없습니다.')
+          if (!res.ok) throw new Error('Post not found.')
           return res.json()
         })
         .then(data => {
@@ -171,7 +171,7 @@ export default function Board() {
           setPreviewLoading(false)
         })
         .catch(err => {
-          setPreviewError(err.message || '게시글 조회 중 오류가 발생했습니다.')
+          setPreviewError(err.message || 'An error occurred while loading the post.')
           setPreviewLoading(false)
         })
     }
@@ -205,7 +205,7 @@ export default function Board() {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(postUrl)
         .then(() => {
-          showToast('글 주소가 클립보드에 복사되었습니다.')
+          showToast('Post link copied to clipboard.')
         })
         .catch(err => {
           console.error('Failed to copy text using clipboard API: ', err)
@@ -225,10 +225,10 @@ export default function Board() {
     textArea.select()
     try {
       document.execCommand('copy')
-      showToast('글 주소가 클립보드에 복사되었습니다.')
+      showToast('Post link copied to clipboard.')
     } catch (err) {
       console.error('Fallback copy failed', err)
-      alert('주소 복사에 실패했습니다.')
+      alert('Failed to copy post link.')
     }
     document.body.removeChild(textArea)
   }, [showToast])
@@ -267,7 +267,7 @@ export default function Board() {
 
     setImageError(null)
     setLoading(true)
-    setMetaText('이미지 처리 중...')
+    setMetaText('Processing image...')
 
     try {
       const fileName = (file.name || 'clipboard-image.png').toLowerCase()
@@ -286,7 +286,7 @@ export default function Board() {
           fileToProcess = new File([blob], fileName.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
         } catch (err) {
           console.error('HEIC conversion failed', err)
-          setImageError('HEIC 이미지 변환에 실패했습니다. (다른 형식의 이미지를 사용해 주세요)')
+          setImageError('Failed to convert HEIC image. Please use another image format.')
           setLoading(false)
           setMetaText('')
           return
@@ -294,7 +294,7 @@ export default function Board() {
       }
 
       if (!fileToProcess.type.startsWith('image/')) {
-        setImageError('이미지 파일만 첨부할 수 있습니다.')
+        setImageError('Only image files can be attached.')
         setLoading(false)
         setMetaText('')
         return
@@ -306,7 +306,7 @@ export default function Board() {
       setMetaText('')
     } catch (err) {
       console.error('Image compression failed', err)
-      setImageError(err.message || '이미지 처리 중 오류가 발생했습니다.')
+      setImageError(err.message || 'An error occurred while processing the image.')
       setMetaText('')
     } finally {
       setLoading(false)
@@ -359,13 +359,13 @@ export default function Board() {
       setMetaText('')
     } catch (err) {
       console.error('posts fetch failed', err)
-      setMetaText('게시글을 불러오지 못했습니다. 콘솔 확인')
+      setMetaText('Failed to load posts. Check console.')
     } finally { setLoading(false) }
   }, [])
 
   const loadBoardById = useCallback((boardId) => {
     setResolvedBoardId(boardId)
-    setMetaText('보드 로드 중...')
+    setMetaText('Loading board...')
     // query server for single board by id (server supports ?id=)
     ;(async function(){
       try {
@@ -377,23 +377,23 @@ export default function Board() {
           loadPosts(boardId)
         } else if (res.status === 404) {
           setBoardMeta(null)
-          setMetaText(`보드를 찾을 수 없습니다 (id:${boardId})`)
+          setMetaText(`Board not found (id:${boardId})`)
         } else {
           const body = await res.text().catch(()=>null)
           console.warn('board id fetch unexpected', res.status, body)
           setBoardMeta(null)
-          setMetaText('보드 메타를 불러오지 못했습니다. 콘솔 확인')
+          setMetaText('Failed to load board metadata. Check console.')
         }
       } catch (err) {
         console.warn('board meta load failed', err)
         setBoardMeta(null)
-        setMetaText('보드 메타를 불러오지 못했습니다. 콘솔 확인')
+        setMetaText('Failed to load board metadata. Check console.')
       }
     })()
   }, [loadPosts])
 
   const loadBoardByGrid = useCallback(async (gx, gy) => {
-    setMetaText('격자 보드 조회 중...')
+    setMetaText('Searching grid board...')
     try {
       const res = await fetch(`/api/boards?grid_x=${encodeURIComponent(gx)}&grid_y=${encodeURIComponent(gy)}`)
       if (res.status === 200) {
@@ -403,17 +403,17 @@ export default function Board() {
         setMetaText(`grid: ${gx},${gy}`)
         loadPosts(obj.id)
       } else if (res.status === 404) {
-        setMetaText(`해당 격자의 게시판을 찾을 수 없습니다 (grid:${gx},${gy}).`)
+        setMetaText(`No board found at this grid (grid:${gx},${gy}).`)
         setResolvedBoardId(null)
         setBoardMeta(null)
       } else {
         const body = await res.text().catch(()=>null)
         console.warn('board grid fetch unexpected', res.status, body)
-        setMetaText('보드 메타를 불러오지 못했습니다. 콘솔 확인')
+        setMetaText('Failed to load board metadata. Check console.')
       }
     } catch (err) {
       console.error('boards fetch failed', err)
-      setMetaText('보드 목록을 불러오지 못했습니다. 콘솔 확인')
+      setMetaText('Failed to load boards list. Check console.')
     }
   }, [loadPosts])
 
@@ -422,15 +422,15 @@ export default function Board() {
     hasScrolledRef.current = false
     if (id) loadBoardById(id)
     else if (grid_x != null && grid_y != null) loadBoardByGrid(grid_x, grid_y)
-    else setMetaText('URL에 ?id=BOARD_ID 또는 ?grid_x=NUM&grid_y=NUM 를 추가하세요.')
+    else setMetaText('Please add ?id=BOARD_ID or ?grid_x=NUM&grid_y=NUM to the URL.')
   }, [id, grid_x, grid_y, loadBoardById, loadBoardByGrid])
 
   async function submitPost() {
-    if (!resolvedBoardId) { alert('게시판이 선택되지 않았습니다. URL에 id 또는 grid_x/grid_y를 지정하세요.'); return }
+    if (!resolvedBoardId) { alert('No board selected. Please specify id or grid_x/grid_y in URL.'); return }
     const authorVal = (author || null)
     const contentVal = (content || '').trim()
     const pw = (postPassword || '').trim()
-    if (!contentVal) { alert('내용을 입력하세요.'); return }
+    if (!contentVal) { alert('Please enter your message.'); return }
 
     setLoading(true)
     try {
@@ -445,7 +445,7 @@ export default function Board() {
         })
         if (!uploadRes.ok) {
           const uploadErr = await uploadRes.json().catch(() => ({}))
-          throw new Error(uploadErr.error || '이미지 업로드에 실패했습니다.')
+          throw new Error(uploadErr.error || 'Image upload failed.')
         }
         const uploadData = await uploadRes.json()
         finalImageUrl = uploadData.url
@@ -469,7 +469,7 @@ export default function Board() {
 
       if (!res.ok) {
         console.error('post failed', res.status, body)
-        const msg = (body && body.error) ? `작성 실패: ${body.error}` : `작성 실패 (HTTP ${res.status})`
+        const msg = (body && body.error) ? `Post failed: ${body.error}` : `Post failed (HTTP ${res.status})`
         alert(msg)
         return
       }
@@ -509,7 +509,7 @@ export default function Board() {
       loadPosts(resolvedBoardId)
     } catch (err) {
       console.error('post failed', err)
-      alert(err.message || '작성 실패. 콘솔을 확인하세요.')
+      alert(err.message || 'Post failed. Check console.')
     } finally {
       setLoading(false)
     }
@@ -566,7 +566,7 @@ export default function Board() {
       }
     } catch (err) {
       console.error('create board failed', err)
-      alert((err && err.error) ? err.error : '보드 생성 실패')
+      alert((err && err.error) ? err.error : 'Failed to create board.')
     } finally {
       setLoading(false)
     }
@@ -574,7 +574,7 @@ export default function Board() {
 
   async function verifyAndEdit(postId) {
     const pw = (document.getElementById(`pwd-${postId}`)?.value || '').trim()
-    if (!pw) { alert('수정을 위해 비밀번호를 입력하세요.'); return }
+    if (!pw) { alert('Please enter your password to edit.'); return }
     try {
       const res = await fetch(`/api/posts/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, password: pw }) })
       if (!res.ok) {
@@ -583,14 +583,14 @@ export default function Board() {
       // enter edit mode
       const post = posts.find(p=>p.id===postId)
       setEditing(e => ({ ...e, [postId]: { editing: true, value: post ? (post.content||'') : '' } }))
-    } catch (err) { console.error('verify failed', err); alert((err && err.error) ? err.error : '비밀번호가 일치하지 않습니다.') }
+    } catch (err) { console.error('verify failed', err); alert((err && err.error) ? err.error : 'Incorrect password.') }
   }
 
   async function saveEdit(postId) {
     const pw = (document.getElementById(`pwd-${postId}`)?.value || '').trim()
-    if (!pw) { alert('수정을 위해 비밀번호를 입력하세요.'); return }
+    if (!pw) { alert('Please enter your password to edit.'); return }
     const newContent = (editing[postId] && editing[postId].value || '').trim()
-    if (!newContent) { alert('내용을 입력하세요.'); return }
+    if (!newContent) { alert('Please enter content.'); return }
     try {
       const res = await fetch(`/api/posts`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, password: pw, content: newContent, author: (author || null) }) })
       if (!res.ok) {
@@ -598,26 +598,26 @@ export default function Board() {
       }
       setEditing(e => { const copy = { ...e }; delete copy[postId]; return copy })
       loadPosts(resolvedBoardId)
-    } catch (err) { console.error('update failed', err); alert((err && err.error) ? err.error : '수정 실패(비밀번호 확인)') }
+    } catch (err) { console.error('update failed', err); alert((err && err.error) ? err.error : 'Edit failed (check password)') }
   }
 
   async function deletePost(postId) {
     const pw = (document.getElementById(`pwd-${postId}`)?.value || '').trim()
-    if (!pw) { alert('삭제를 위해 비밀번호를 입력하세요.'); return }
-    if (!confirm('정말로 삭제하시겠습니까?')) return
+    if (!pw) { alert('Please enter your password to delete.'); return }
+    if (!confirm('Are you sure you want to delete this post?')) return
     try {
       const res = await fetch(`/api/posts?id=${encodeURIComponent(postId)}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
       if (!res.ok) {
         const j = await res.json().catch(()=>({})); throw j
       }
       loadPosts(resolvedBoardId)
-    } catch (err) { console.error('delete failed', err); alert((err && err.error) ? err.error : '삭제 실패(비밀번호 확인)') }
+    } catch (err) { console.error('delete failed', err); alert((err && err.error) ? err.error : 'Delete failed (check password)') }
   }
 
   return (
     <>
       <Head>
-        <title>{boardMeta ? `${boardMeta.name} - MaplibreBoard` : '게시판'}</title>
+        <title>{boardMeta ? `${boardMeta.name} - MaplibreBoard` : 'Board'}</title>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -626,14 +626,14 @@ export default function Board() {
         <header className="board-header">
           <div className="header-back">
             <button onClick={() => window.location.href = '/map'} className="btn btn-secondary btn-sm">
-              ← 지도 보기
+              ← View Map
             </button>
             <button onClick={() => window.location.href = '/'} className="btn btn-secondary btn-sm ml-2">
-              메인으로
+              Home
             </button>
           </div>
           <div className="header-brand">
-            <h1>격자 게시판</h1>
+            <h1>Grid Board</h1>
           </div>
         </header>
 
@@ -672,12 +672,12 @@ export default function Board() {
 
                 {/* Posts Timeline List */}
                 <div className="posts-timeline">
-                  <h3>최신 게시글 피드</h3>
+                  <h3>Latest Feed</h3>
                   
-                  {loading && <div className="timeline-state">불러오는 중...</div>}
+                  {loading && <div className="timeline-state">Loading...</div>}
                   {!loading && posts.length === 0 && (
                     <div className="empty-timeline">
-                      <p>아직 등록된 게시물이 없습니다. 첫 번째 글을 작성해 보세요!</p>
+                      <p>No posts yet. Write the first post!</p>
                     </div>
                   )}
 
@@ -722,7 +722,7 @@ export default function Board() {
       <button 
         onClick={scrollToTop} 
         className={`scroll-to-top ${showScrollTop ? 'visible' : ''}`}
-        aria-label="맨 위로 이동"
+        aria-label="Scroll to top"
       >
         ▲
       </button>
