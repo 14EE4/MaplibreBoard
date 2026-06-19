@@ -80,7 +80,7 @@ export default async function handler(req, res) {
 
       const classification = classifyIP(ip);
       let location = null;
-      if (classification === '일반 공인 IP') {
+      if (classification === 'Public IP') {
         if (ip) {
           const geo = geoip.lookup(ip);
           if (geo) {
@@ -88,10 +88,10 @@ export default async function handler(req, res) {
             const city = geo.city || 'Unknown';
             location = `${country} / ${city}`;
           } else {
-            location = '일반 공인 IP';
+            location = 'Public IP';
           }
         } else {
-          location = '일반 공인 IP';
+          location = 'Public IP';
         }
       } else {
         location = classification;
@@ -105,11 +105,11 @@ export default async function handler(req, res) {
       }
       if (author && author.length > 20) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 닉네임 길이 초과 (IP: ${ip})`)
-        return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
+        return res.status(400).json({ error: 'Nickname can be at most 20 characters.' })
       }
       if (content && content.length > 1000) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 작성 실패 - 내용 길이 초과 (IP: ${ip})`)
-        return res.status(400).json({ error: '내용은 최대 1000자까지 입력 가능합니다.' })
+        return res.status(400).json({ error: 'Content can be at most 1000 characters.' })
       }
 
       // hash password (SHA-256 hex) to be compatible with backend service
@@ -160,11 +160,11 @@ export default async function handler(req, res) {
       }
       if (author && author.length > 20) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 닉네임 길이 초과 (IP: ${ip})`)
-        return res.status(400).json({ error: '닉네임은 최대 20자까지 입력 가능합니다.' })
+        return res.status(400).json({ error: 'Nickname can be at most 20 characters.' })
       }
       if (content && content.length > 1000) {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 수정 실패 - 내용 길이 초과 (IP: ${ip})`)
-        return res.status(400).json({ error: '내용은 최대 1000자까지 입력 가능합니다.' })
+        return res.status(400).json({ error: 'Content can be at most 1000 characters.' })
       }
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
@@ -177,7 +177,7 @@ export default async function handler(req, res) {
       const stored = existing.rows[0].password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
         console.log(`[${timestamp}] [API LOG] [403 Forbidden] 글 수정 실패 - 비밀번호 불일치 (IP: ${ip}, 대상 글: ${id})`)
-        return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
+        return res.status(403).json({ error: 'Incorrect password.' })
       }
 
       const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, hashed, id])
@@ -221,15 +221,15 @@ export default async function handler(req, res) {
 
       const existingPost = existing.rows[0]
 
-      if (existingPost.content === '(이 글은 삭제되었습니다)') {
+      if (existingPost.content === '(이 글은 삭제되었습니다)' || existingPost.content === '(This post has been deleted)') {
         console.log(`[${timestamp}] [API LOG] [400 Bad Request] 글 삭제 실패 - 이미 삭제된 글 (IP: ${ip}, 대상 글: ${id})`)
-        return res.status(400).json({ error: '이미 삭제된 게시글입니다.' })
+        return res.status(400).json({ error: 'This post has already been deleted.' })
       }
 
       const stored = existingPost.password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
         console.log(`[${timestamp}] [API LOG] [403 Forbidden] 글 삭제 실패 - 비밀번호 불일치 (IP: ${ip}, 대상 글: ${id})`)
-        return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
+        return res.status(403).json({ error: 'Incorrect password.' })
       }
 
       // transaction: update post content and decrement boards.posts_count
@@ -237,7 +237,7 @@ export default async function handler(req, res) {
       try {
         await client.query('BEGIN')
         const del = await client.query(
-          "UPDATE posts SET content = '(이 글은 삭제되었습니다)', author = null, password = null, image_url = null, updated_at = now() WHERE id = $1 RETURNING *",
+          "UPDATE posts SET content = '(This post has been deleted)', author = null, password = null, image_url = null, updated_at = now() WHERE id = $1 RETURNING *",
           [Number(id)]
         )
         if (del.rowCount === 0) {

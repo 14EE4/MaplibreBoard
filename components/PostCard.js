@@ -34,22 +34,22 @@ export default function PostCard({
           <span 
             className="post-number"
             style={{ cursor: 'pointer' }}
-            title="클릭하여 답장 인용"
+            title="Click to quote reply"
             onClick={() => onPostNumberClick && onPostNumberClick(post.id)}
           >
             No. {post.id}
           </span>
-          <span className="post-author">{post.author ? escapeHtml(post.author) : '익명'}</span>
+          <span className="post-author">{post.author ? escapeHtml(post.author) : 'Anonymous'}</span>
           <button 
             className="btn-share-post"
-            title="글 주소 복사"
+            title="Copy link"
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
               onShareClick && onShareClick(post.id, post.board_id)
             }}
           >
-            공유
+            Share
           </button>
         </div>
         <span className="post-date">{post.created_at ? formatTime(post.created_at) : ''}</span>
@@ -73,9 +73,9 @@ export default function PostCard({
           </div>
         ) : (
           <>
-            <p className={`post-text ${post.content === '(이 글은 삭제되었습니다)' ? 'deleted-post-text' : ''}`}>
+            <p className={`post-text ${(post.content === '(이 글은 삭제되었습니다)' || post.content === '(This post has been deleted)') ? 'deleted-post-text' : ''}`}>
               <PostContent 
-                content={post.content} 
+                content={(post.content === '(이 글은 삭제되었습니다)' || post.content === '(This post has been deleted)') ? '(This post has been deleted)' : post.content} 
                 onCitationClick={onCitationClick} 
                 onCitationHover={onCitationHover} 
               />
@@ -85,7 +85,7 @@ export default function PostCard({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={post.image_url} 
-                  alt="첨부 이미지" 
+                  alt="Attached image" 
                   onClick={() => setLightboxImage(post.image_url)}
                   className="post-image"
                 />
@@ -93,13 +93,13 @@ export default function PostCard({
             )}
             {post.image_url === 'censored' && (
               <div className="censored-image-box">
-                🚫 이미지 검열됨
+                🚫 Image Censored
               </div>
             )}
             
             {backlinks && backlinks.length > 0 && (
               <div className="post-backlinks">
-                <span className="backlink-label">↳ 인용한 글:</span>
+                <span className="backlink-label">↳ Cited by:</span>
                 {backlinks.map((bl) => (
                   <a
                     key={bl.id}
@@ -122,12 +122,12 @@ export default function PostCard({
         )}
       </div>
 
-      {post.content !== '(이 글은 삭제되었습니다)' && (
+      {post.content !== '(이 글은 삭제되었습니다)' && post.content !== '(This post has been deleted)' && (
         <div className="post-actions-panel">
           <input 
             id={`pwd-${post.id}`} 
             type="password" 
-            placeholder="비밀번호" 
+            placeholder="Password" 
             maxLength={4} 
             className="input-field pwd-action-field"
             onKeyDown={ev => { 
@@ -140,13 +140,13 @@ export default function PostCard({
           
           {isEditing ? (
             <div className="action-buttons">
-              <button onClick={() => saveEdit(post.id)} className="btn btn-primary btn-sm mr-2">저장</button>
-              <button onClick={() => setEditing(e => { const copy = { ...e }; delete copy[post.id]; return copy })} className="btn btn-secondary btn-sm">취소</button>
+              <button onClick={() => saveEdit(post.id)} className="btn btn-primary btn-sm mr-2">Save</button>
+              <button onClick={() => setEditing(e => { const copy = { ...e }; delete copy[post.id]; return copy })} className="btn btn-secondary btn-sm">Cancel</button>
             </div>
           ) : (
             <div className="action-buttons">
-              <button onClick={() => verifyAndEdit(post.id)} className="btn btn-secondary btn-sm mr-2">수정</button>
-              <button onClick={() => deletePost(post.id)} className="btn btn-danger-outline btn-sm">삭제</button>
+              <button onClick={() => verifyAndEdit(post.id)} className="btn btn-secondary btn-sm mr-2" title="Edit">🛠️</button>
+              <button onClick={() => deletePost(post.id)} className="btn btn-danger-outline btn-sm" title="Delete">🗑️</button>
             </div>
           )}
         </div>

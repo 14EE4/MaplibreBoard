@@ -20,14 +20,14 @@ export default function PostPreview({ post, position, loading, error }) {
       onClick={(e) => e.stopPropagation()}
     >
       {loading ? (
-        <div className="preview-loading">불러오는 중...</div>
+        <div className="preview-loading">Loading...</div>
       ) : error ? (
         <div className="preview-error">⚠️ {error}</div>
       ) : (
         <>
           <div className="preview-header">
             <span className="preview-number">No. {post.id}</span>
-            <span className="preview-author">{post.author || '익명'}</span>
+            <span className="preview-author">{post.author || 'Anonymous'}</span>
             <span className="preview-date">{post.created_at ? formatTime(post.created_at) : ''}</span>
           </div>
           <div className="preview-body">

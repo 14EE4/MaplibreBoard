@@ -107,7 +107,7 @@ export default async function handler(req, res) {
           for (const post of postsResult.rows) {
             // Soft-delete post record by updating content and clearing sensitive info
             await client.query(
-              "UPDATE posts SET content = '(이 글은 삭제되었습니다)', author = NULL, password = NULL, image_url = NULL, updated_at = now() WHERE id = $1",
+              "UPDATE posts SET content = '(This post has been deleted)', author = NULL, password = NULL, image_url = NULL, updated_at = now() WHERE id = $1",
               [post.id]
             );
             // Decrement posts count in board

@@ -6,7 +6,7 @@ export default function Lightbox({ imageUrl, onClose }) {
     <div onClick={onClose} className="lightbox-overlay">
       <div className="lightbox-wrapper" onClick={(e) => e.stopPropagation()}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="확대 이미지" className="lightbox-img" />
+        <img src={imageUrl} alt="Enlarged image" className="lightbox-img" />
         <button onClick={onClose} className="lightbox-close-btn">
           ✕
         </button>
