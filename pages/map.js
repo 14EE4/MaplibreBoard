@@ -200,19 +200,9 @@ export default function MapPage() {
               const size = gridState.sizeDeg
               const gridX = Math.floor((lng + 180) / size)
               const gridY = Math.floor((lat + 90) / size)
-              const centerLng = gridX * size - 180 + size/2
-              const centerLat = gridY * size - 90 + size/2
 
-              fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
-              })
-              .then(function(res){ if (!res.ok) throw new Error('Server Error'); return res.json() })
-              .then(function(data){
-                // Navigate using grid query format
-                window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
-                try { updateBoardsOverlay() } catch(e) {}
-              })
-              .catch(function(err){ console.error('grid ensure error', err); alert('Failed to open/create board. Check console.') })
+              // 즉시 해당 격자 보드 페이지로 이동 (보드 생성은 보드 페이지 내에서 직접 처리)
+              window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
             } catch (err) { console.error('grid click handler failed', err) }
           })
         }
