@@ -376,12 +376,12 @@ export default function Board() {
           setMetaText('')
           loadPosts(boardId)
         } else if (res.status === 404) {
-          // 존재하지 않는 보드 ID로의 접속 차단 및 홈 리다이렉트
-          alert(`This board (ID: ${boardId}) does not exist. Redirecting to home.`)
+          // 존재하지 않는 보드 ID로의 접속 차단 및 기본 보드(id=1) 리다이렉트
+          alert(`This board (ID: ${boardId}) does not exist. Redirecting to default board.`)
           try {
-            router.replace('/')
+            router.replace('/board?id=1')
           } catch (e) {
-            window.location.href = '/'
+            window.location.href = '/board?id=1'
           }
           return
         } else {
@@ -434,17 +434,17 @@ export default function Board() {
     } else if (grid_x != null && grid_y != null) {
       loadBoardByGrid(grid_x, grid_y)
     } else {
-      // 쿼리 매개변수가 없는 경우 일반 사용자는 차단 및 홈(/)으로 리다이렉트
+      // 쿼리 매개변수가 없는 경우 일반 사용자는 차단 및 기본 보드(id=1)로 리다이렉트
       try {
         const isAuthed = sessionStorage.getItem('admin-authed') === '1'
         if (!isAuthed) {
           alert('Access denied. Please access the board page with proper grid coordinates or ID.')
-          router.replace('/')
+          router.replace('/board?id=1')
         } else {
           setMetaText('Please add ?id=BOARD_ID or ?grid_x=NUM&grid_y=NUM to the URL.')
         }
       } catch (e) {
-        router.replace('/')
+        router.replace('/board?id=1')
       }
     }
   }, [id, grid_x, grid_y, loadBoardById, loadBoardByGrid, router, router?.isReady])
