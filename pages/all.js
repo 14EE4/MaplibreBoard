@@ -68,7 +68,7 @@ export default function AllFeedPage() {
     } else {
       fetch(`/api/posts?id=${targetId}`)
         .then(res => {
-          if (!res.ok) throw new Error('존재하지 않는 게시글입니다.')
+          if (!res.ok) throw new Error('This post does not exist.')
           return res.json()
         })
         .then(post => {
@@ -113,7 +113,7 @@ export default function AllFeedPage() {
     } else {
       fetch(`/api/posts?id=${targetId}`)
         .then(res => {
-          if (!res.ok) throw new Error('게시글을 찾을 수 없습니다.')
+          if (!res.ok) throw new Error('Post not found.')
           return res.json()
         })
         .then(data => {
@@ -121,7 +121,7 @@ export default function AllFeedPage() {
           setPreviewLoading(false)
         })
         .catch(err => {
-          setPreviewError(err.message || '게시글 조회 중 오류가 발생했습니다.')
+          setPreviewError(err.message || 'An error occurred while loading the post.')
           setPreviewLoading(false)
         })
     }
@@ -144,7 +144,7 @@ export default function AllFeedPage() {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(postUrl)
         .then(() => {
-          showToast('글 주소가 클립보드에 복사되었습니다.')
+          showToast('Post link copied to clipboard.')
         })
         .catch(err => {
           console.error('Failed to copy text using clipboard API: ', err)
@@ -164,10 +164,10 @@ export default function AllFeedPage() {
     textArea.select()
     try {
       document.execCommand('copy')
-      showToast('글 주소가 클립보드에 복사되었습니다.')
+      showToast('Post link copied to clipboard.')
     } catch (err) {
       console.error('Fallback copy failed', err)
-      alert('주소 복사에 실패했습니다.')
+      alert('Failed to copy post link.')
     }
     document.body.removeChild(textArea)
   }, [showToast])
@@ -210,7 +210,7 @@ export default function AllFeedPage() {
         setPosts(Array.isArray(data) ? data : [])
       } catch (err) {
         console.error('Failed to fetch posts', err)
-        setErrorMsg('게시글 목록을 불러오는 데 실패했습니다.')
+        setErrorMsg('Failed to load posts.')
       } finally {
         setLoading(false)
       }
@@ -223,7 +223,7 @@ export default function AllFeedPage() {
   return (
     <>
       <Head>
-        <title>전체 피드 - MaplibreBoard</title>
+        <title>All Feed - MaplibreBoard</title>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -231,11 +231,11 @@ export default function AllFeedPage() {
         {/* Header */}
         <header className="feed-header">
           <button onClick={() => window.location.href = '/'} className="btn-back">
-            ← 메인으로
+            ← Home
           </button>
           <div className="header-title-wrapper">
-            <h1 className="feed-title">전체 글 피드</h1>
-            <p className="feed-subtitle">모든 격자 게시판의 소식을 한눈에 확인하세요</p>
+            <h1 className="feed-title">All Feed</h1>
+            <p className="feed-subtitle">View updates from all grid boards at a glance</p>
           </div>
         </header>
 
@@ -243,7 +243,7 @@ export default function AllFeedPage() {
         {loading ? (
           <div className="status-container">
             <div className="loading-spinner"></div>
-            <p className="status-text">게시글을 불러오는 중입니다...</p>
+            <p className="status-text">Loading posts...</p>
           </div>
         ) : errorMsg ? (
           <div className="status-container error">
@@ -251,7 +251,7 @@ export default function AllFeedPage() {
           </div>
         ) : posts.length === 0 ? (
           <div className="status-container empty">
-            <p className="status-text">등록된 게시글이 없습니다.</p>
+            <p className="status-text">No posts available.</p>
           </div>
         ) : (
           <div className="feed-grid">
@@ -270,19 +270,19 @@ export default function AllFeedPage() {
                   <div className="card-header-left">
                     <span className="post-number">No. {post.id}</span>
                     <span className="board-badge">
-                      📍 {post.board_name || '이름 없음'} 
+                      📍 {post.board_name || 'Unnamed'} 
                       {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
                     </span>
                     <button 
                       className="btn-share-post"
-                      title="글 주소 복사"
+                      title="Copy link"
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
                         handleShareClick(post.id, post.board_id)
                       }}
                     >
-                      공유
+                      Share
                     </button>
                   </div>
                   <span className="post-date">{post.created_at ? formatTime(post.created_at) : ''}</span>
@@ -290,11 +290,11 @@ export default function AllFeedPage() {
 
                 <div className="card-body">
                   <p className="post-author">
-                    작성자: <span className="author-name">{post.author ? escapeHtml(post.author) : '익명'}</span>
+                    Author: <span className="author-name">{post.author ? escapeHtml(post.author) : 'Anonymous'}</span>
                   </p>
-                  <p className={`post-content ${post.content === '(이 글은 삭제되었습니다)' ? 'deleted-post-text' : ''}`}>
+                  <p className={`post-content ${(post.content === '(이 글은 삭제되었습니다)' || post.content === '(This post has been deleted)') ? 'deleted-post-text' : ''}`}>
                     <PostContent
-                      content={post.content}
+                      content={(post.content === '(이 글은 삭제되었습니다)' || post.content === '(This post has been deleted)') ? '(This post has been deleted)' : post.content}
                       onCitationClick={handleCitationClick}
                       onCitationHover={handleCitationHover}
                     />
@@ -302,7 +302,7 @@ export default function AllFeedPage() {
                   
                   {backlinksMap[post.id] && backlinksMap[post.id].length > 0 && (
                     <div className="post-backlinks">
-                      <span className="backlink-label">↳ 인용한 글:</span>
+                      <span className="backlink-label">↳ Cited by:</span>
                       {backlinksMap[post.id].map((bl) => (
                         <a
                           key={bl.id}
@@ -326,7 +326,7 @@ export default function AllFeedPage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={post.image_url}
-                        alt="첨부 이미지"
+                        alt="Attached image"
                         className="post-thumbnail"
                         onClick={(e) => {
                           e.stopPropagation() // Prevent clicking the card
@@ -337,13 +337,13 @@ export default function AllFeedPage() {
                   )}
                   {post.image_url === 'censored' && (
                     <div className="censored-image-box" onClick={(e) => e.stopPropagation()}>
-                      🚫 이미지 검열됨
+                      🚫 Image Censored
                     </div>
                   )}
                 </div>
                 
                 <div className="card-footer">
-                  <span className="click-helper">해당 게시판으로 이동 →</span>
+                  <span className="click-helper">Go to board →</span>
                 </div>
               </div>
             ))}
@@ -376,7 +376,7 @@ export default function AllFeedPage() {
       <button 
         onClick={scrollToTop} 
         className={`scroll-to-top ${showScrollTop ? 'visible' : ''}`}
-        aria-label="맨 위로 이동"
+        aria-label="Scroll to top"
       >
         ▲
       </button>

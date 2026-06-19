@@ -134,11 +134,11 @@ export default function Admin() {
         setLogs({ out: data.out, err: data.err })
       } else {
         const err = await res.json()
-        setModerationError(err.error || 'PM2 로그를 불러오지 못했습니다.')
+        setModerationError(err.error || 'Failed to load PM2 logs.')
       }
     } catch (err) {
       console.error(err)
-      setModerationError('서버 통신에 실패했습니다.')
+      setModerationError('Failed to communicate with server.')
     } finally {
       setLoadingLogs(false)
     }
@@ -154,11 +154,11 @@ export default function Admin() {
         setAllPosts(data)
       } else {
         const err = await res.json()
-        setModerationError(err.error || '게시글 목록을 불러오지 못했습니다.')
+        setModerationError(err.error || 'Failed to load posts.')
       }
     } catch (err) {
       console.error(err)
-      setModerationError('서버 통신에 실패했습니다.')
+      setModerationError('Failed to communicate with server.')
     } finally {
       setLoadingPosts(false)
     }
@@ -174,11 +174,11 @@ export default function Admin() {
         setImages(data)
       } else {
         const err = await res.json()
-        setModerationError(err.error || '이미지 목록을 불러오지 못했습니다.')
+        setModerationError(err.error || 'Failed to load images.')
       }
     } catch (err) {
       console.error(err)
-      setModerationError('서버 통신에 실패했습니다.')
+      setModerationError('Failed to communicate with server.')
     } finally {
       setLoadingImages(false)
     }
@@ -202,11 +202,11 @@ export default function Admin() {
         } catch (e) { }
         setAuthorized(true)
       } else {
-        setError('비밀번호가 틀렸습니다.')
+        setError('Incorrect password.')
       }
     } catch (err) {
       console.error(err)
-      setError('서버 통신에 실패했습니다.')
+      setError('Failed to communicate with server.')
     }
   }
 
@@ -253,11 +253,11 @@ export default function Admin() {
         }
       } else {
         const err = await res.json()
-        setModerationError(err.error || '삭제 작업에 실패했습니다.')
+        setModerationError(err.error || 'Failed to delete.')
       }
     } catch (err) {
       console.error(err)
-      setModerationError('서버와 통신하는 중 오류가 발생했습니다.')
+      setModerationError('An error occurred while communicating with server.')
     } finally {
       setPendingAction(null)
     }
@@ -267,17 +267,17 @@ export default function Admin() {
     return (
       <>
         <Head>
-          <title>관리자 로그인 - MaplibreBoard</title>
+          <title>Admin Login - MaplibreBoard</title>
           <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
         </Head>
         <main className="login-container">
           <div className="login-card">
             <h1>MaplibreBoard Admin</h1>
-            <p className="subtitle">관리자 비밀번호를 입력해 주세요.</p>
+            <p className="subtitle">Please enter admin password.</p>
             <form onSubmit={submitPw}>
               <input
                 type="password"
-                placeholder="비밀번호"
+                placeholder="Password"
                 value={inputPw}
                 onChange={(e) => setInputPw(e.target.value)}
                 className="input-field"
@@ -296,7 +296,7 @@ export default function Admin() {
   return (
     <>
       <Head>
-        <title>관리자 대시보드 - MaplibreBoard</title>
+        <title>Admin Dashboard - MaplibreBoard</title>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -308,8 +308,8 @@ export default function Admin() {
             <span className="badge-status">WSL Local Server</span>
           </div>
           <div className="header-actions">
-            <Link href="/" className="btn btn-secondary mr-2">인덱스 페이지로 이동</Link>
-            <button onClick={logout} className="btn btn-danger-outline">로그아웃</button>
+            <Link href="/" className="btn btn-secondary mr-2">Go to Home</Link>
+            <button onClick={logout} className="btn btn-danger-outline">Logout</button>
           </div>
         </header>
 
@@ -319,25 +319,25 @@ export default function Admin() {
             onClick={() => handleTabChange('boards')}
             className={`tab-btn ${activeTab === 'boards' ? 'active' : ''}`}
           >
-            게시판 목록 ({boards.length})
+            Boards ({boards.length})
           </button>
           <button
             onClick={() => handleTabChange('moderation')}
             className={`tab-btn ${activeTab === 'moderation' ? 'active' : ''}`}
           >
-            이미지 검열 및 관리
+            Images
           </button>
           <button
             onClick={() => handleTabChange('posts')}
             className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
           >
-            전체 게시글 및 IP 관리
+            Posts & IPs
           </button>
           <button
             onClick={() => handleTabChange('logs')}
             className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`}
           >
-            실시간 서버 로그
+            Logs
           </button>
         </nav>
 
@@ -349,25 +349,25 @@ export default function Admin() {
           {activeTab === 'boards' && (
             <section className="card-section">
               <div className="section-header">
-                <h2>생성된 게시판 목록</h2>
-                <Link href="/board" className="btn btn-primary btn-sm">새 게시판 열기</Link>
+                <h2>Boards</h2>
+                <Link href="/board" className="btn btn-primary btn-sm">Open New Board</Link>
               </div>
               {boards.length === 0 ? (
                 <div className="empty-state">
-                  <p>생성된 게시판이 없습니다. 지도를 클릭해 새 보드를 생성해 보세요.</p>
+                <p>No boards created yet. Click on the map to create a new board.</p>
                 </div>
               ) : (
                 <div className="boards-grid">
                   {boards.map((b) => (
                     <div key={b.id} className="board-card">
                       <div className="board-info">
-                        <h3>{b.name || `보드 ${b.id}`}</h3>
-                        <p className="board-coords">좌표: ({b.x}, {b.y})</p>
+                        <h3>{b.name || `Board ${b.id}`}</h3>
+                        <p className="board-coords">Coordinates: ({b.x}, {b.y})</p>
                       </div>
                       <div className="board-meta">
-                        <span className="post-count-badge">글 {b.count || 0}개</span>
+                        <span className="post-count-badge">{b.count || 0} posts</span>
                         <Link href={`/board?id=${b.id}`} className="btn btn-secondary btn-sm">
-                          이동하기
+                          Go
                         </Link>
                       </div>
                     </div>
@@ -381,20 +381,20 @@ export default function Admin() {
           {activeTab === 'moderation' && (
             <section className="card-section">
               <div className="section-header">
-                <h2>업로드 이미지 목록 및 검열</h2>
+                <h2>Uploaded Images & Moderation</h2>
                 <button onClick={fetchImages} className="btn btn-secondary btn-sm" disabled={loadingImages}>
-                  새로고침
+                  Refresh
                 </button>
               </div>
 
               {loadingImages ? (
                 <div className="loading-state">
                   <div className="spinner"></div>
-                  <p>서버에서 이미지를 불러오는 중...</p>
+                  <p>Loading images from server...</p>
                 </div>
               ) : images.length === 0 ? (
                 <div className="empty-state">
-                  <p>업로드된 이미지 파일이 없습니다.</p>
+                  <p>No uploaded images.</p>
                 </div>
               ) : (
                 <div className="gallery-grid">
@@ -404,7 +404,7 @@ export default function Admin() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={img.url} alt={img.fileName} className="gallery-img" />
                         <span className={`status-badge ${img.isOrphaned ? 'badge-orphan' : 'badge-linked'}`}>
-                          {img.isOrphaned ? '연결 없음 (Orphaned)' : '게시글 연결됨'}
+                          {img.isOrphaned ? 'Orphaned (No Post)' : 'Linked to Post'}
                         </span>
                       </div>
 
@@ -415,7 +415,7 @@ export default function Admin() {
                           <div className="associated-posts">
                             {img.posts.map((post) => (
                               <div key={post.id} className="post-detail-box">
-                                <p className="post-author">작성자: <strong>{post.author || '익명'}</strong></p>
+                                <p className="post-author">Author: <strong>{post.author || 'Anonymous'}</strong></p>
                                 <p className="post-body">{post.content}</p>
                                 <div className="post-footer">
                                   <a 
@@ -424,15 +424,15 @@ export default function Admin() {
                                     rel="noopener noreferrer" 
                                     className="post-link"
                                   >
-                                    글 #{post.id} 바로가기 (새 탭)
+                                    Go to post #{post.id} (New Tab)
                                   </a>
-                                  <span className="post-date">{post.created_at ? formatTime(post.created_at) : '기록 없음'}</span>
+                                  <span className="post-date">{post.created_at ? formatTime(post.created_at) : 'No Record'}</span>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="orphan-desc">DB에 해당 이미지를 사용하는 게시글이 없습니다. 디스크 용량 정리를 위해 안전하게 파일 삭제가 가능합니다.</p>
+                          <p className="orphan-desc">No database posts use this image. It can be safely deleted to free disk space.</p>
                         )}
 
                         <div className="action-buttons-group">
@@ -442,13 +442,13 @@ export default function Admin() {
                                 onClick={() => setPendingAction({ fileName: img.fileName, action: 'clear-image-only', postInfo: img.posts[0] })}
                                 className="btn btn-warning btn-sm btn-full"
                               >
-                                이미지 파일만 삭제
+                                Delete Image Only
                               </button>
                               <button
                                 onClick={() => setPendingAction({ fileName: img.fileName, action: 'delete-post', postInfo: img.posts[0] })}
                                 className="btn btn-danger btn-sm btn-full"
                               >
-                                전체 게시글 삭제
+                                Delete Entire Post
                               </button>
                             </>
                           ) : (
@@ -456,7 +456,7 @@ export default function Admin() {
                               onClick={() => setPendingAction({ fileName: img.fileName, action: 'delete-file' })}
                               className="btn btn-danger btn-sm btn-full"
                             >
-                              파일 완전 삭제
+                              Permanently Delete File
                             </button>
                           )}
                         </div>
@@ -472,33 +472,33 @@ export default function Admin() {
           {activeTab === 'posts' && (
             <section className="card-section">
               <div className="section-header">
-                <h2>전체 게시글 및 작성자 IP 목록</h2>
+                <h2>All Posts & Author IP List</h2>
                 <button onClick={fetchPosts} className="btn btn-secondary btn-sm" disabled={loadingPosts}>
-                  새로고침
+                  Refresh
                 </button>
               </div>
 
               {loadingPosts ? (
                 <div className="loading-state">
                   <div className="spinner"></div>
-                  <p>서버에서 게시글을 불러오는 중...</p>
+                  <p>Loading posts from server...</p>
                 </div>
               ) : allPosts.length === 0 ? (
                 <div className="empty-state">
-                  <p>등록된 게시글이 없습니다.</p>
+                  <p>No posts registered.</p>
                 </div>
               ) : (
                 <div className="table-responsive">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>글 번호</th>
-                        <th>게시판 이름</th>
-                        <th>작성자</th>
-                        <th>내용</th>
-                        <th>작성자 IP</th>
-                        <th>기기 / 브라우저</th>
-                        <th>작성 일시</th>
+                        <th>No.</th>
+                        <th>Board Name</th>
+                        <th>Author</th>
+                        <th>Content</th>
+                        <th>Author IP</th>
+                        <th>Device / Browser</th>
+                        <th>Created At</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -521,16 +521,16 @@ export default function Admin() {
                               rel="noopener noreferrer"
                               className="btn-link"
                             >
-                              {post.board_name || '이름 없음'}
+                              {post.board_name || 'Unnamed'}
                               {post.board_x !== null && post.board_y !== null ? ` (${post.board_x}, ${post.board_y})` : ''}
                             </a>
                           </td>
-                          <td><strong>{post.author || '익명'}</strong></td>
+                          <td><strong>{post.author || 'Anonymous'}</strong></td>
                           <td className="table-post-content" title={post.content}>
                             {post.content}
                           </td>
                           <td>
-                            <code className="ip-badge">{post.ip || '기록 없음'}</code>
+                            <code className="ip-badge">{post.ip || 'No Record'}</code>
                             {post.location && (
                               <span className="location-badge">{post.location}</span>
                             )}
@@ -539,10 +539,10 @@ export default function Admin() {
                             {post.os && post.browser ? (
                               <span className="ua-badge">{post.os} / {post.browser}</span>
                             ) : (
-                              <code className="ip-badge">기록 없음</code>
+                              <code className="ip-badge">No Record</code>
                             )}
                           </td>
-                          <td>{post.created_at ? formatTime(post.created_at) : '기록 없음'}</td>
+                          <td>{post.created_at ? formatTime(post.created_at) : 'No Record'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -556,34 +556,34 @@ export default function Admin() {
           {activeTab === 'logs' && (
             <section className="card-section">
               <div className="section-header">
-                <h2>실시간 PM2 서버 로그 (마지막 200줄)</h2>
+                <h2>Real-time PM2 Server Logs (Last 200 lines)</h2>
                 <button onClick={fetchLogs} className="btn btn-secondary btn-sm" disabled={loadingLogs}>
-                  새로고침
+                  Refresh
                 </button>
               </div>
 
               {loadingLogs ? (
                 <div className="loading-state">
                   <div className="spinner"></div>
-                  <p>서버에서 로그를 읽어오는 중...</p>
+                  <p>Reading logs from server...</p>
                 </div>
               ) : (
                 <div className="logs-container">
                   <div className="log-viewer-box">
                     <div className="log-viewer-header">
-                      <div className="log-viewer-title title-stdout">표준 출력 로그 (Stdout)</div>
+                      <div className="log-viewer-title title-stdout">Standard Output Logs (Stdout)</div>
                     </div>
                     <pre ref={stdoutRef} className="log-viewer-content">
-                      {logs.out || '로그가 비어 있거나 기록이 없습니다.'}
+                      {logs.out || 'Logs are empty or no records exist.'}
                     </pre>
                   </div>
 
                   <div className="log-viewer-box">
                     <div className="log-viewer-header">
-                      <div className="log-viewer-title title-stderr">에러 출력 로그 (Stderr)</div>
+                      <div className="log-viewer-title title-stderr">Error Output Logs (Stderr)</div>
                     </div>
                     <pre ref={stderrRef} className="log-viewer-content">
-                      {logs.err || '에러 로그가 비어 있거나 기록이 없습니다.'}
+                      {logs.err || 'Error logs are empty or no records exist.'}
                     </pre>
                   </div>
                 </div>
@@ -597,30 +597,30 @@ export default function Admin() {
       {pendingAction && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <h3>정말 삭제하시겠습니까?</h3>
+            <h3>Are you sure you want to delete?</h3>
             <div className="modal-body">
-              <p>파일명: <code className="modal-filename">{pendingAction.fileName}</code></p>
+              <p>Filename: <code className="modal-filename">{pendingAction.fileName}</code></p>
               <div className="warning-box">
                 {pendingAction.action === 'delete-post' && (
-                  <p className="danger-text">⚠️ <strong>[전체 게시글 삭제]</strong>를 선택하셨습니다. DB에서 게시글 데이터가 완전히 삭제되고, 서버 디스크에서도 이미지 파일이 영구 삭제됩니다.</p>
+                  <p className="danger-text">⚠️ <strong>[Delete Entire Post]</strong> Selected. Database record and the image file on server disk will be permanently deleted.</p>
                 )}
                 {pendingAction.action === 'clear-image-only' && (
-                  <p className="warning-text">⚠️ <strong>[이미지 파일만 삭제]</strong>를 선택하셨습니다. 해당 게시글의 텍스트 내용은 그대로 유지되지만, 첨부된 이미지는 완전히 지워집니다.</p>
+                  <p className="warning-text">⚠️ <strong>[Delete Image Only]</strong> Selected. The post text will remain, but the image will be permanently removed.</p>
                 )}
                 {pendingAction.action === 'delete-file' && (
-                  <p className="danger-text">⚠️ <strong>[파일 완전 삭제]</strong>를 선택하셨습니다. 연결이 유실된 이미지가 서버 디스크에서 영구히 지워집니다.</p>
+                  <p className="danger-text">⚠️ <strong>[Permanently Delete File]</strong> Selected. The orphaned file will be permanently removed from server disk.</p>
                 )}
               </div>
               {pendingAction.postInfo && (
                 <div className="modal-post-preview">
-                  <p><strong>작성자:</strong> {pendingAction.postInfo.author || '익명'}</p>
+                  <p><strong>Author:</strong> {pendingAction.postInfo.author || 'Anonymous'}</p>
                   <p className="post-content-preview">"{pendingAction.postInfo.content}"</p>
                 </div>
               )}
             </div>
             <div className="modal-footer">
-              <button onClick={() => setPendingAction(null)} className="btn btn-secondary">취소</button>
-              <button onClick={handleConfirmDelete} className="btn btn-danger">확인 및 삭제</button>
+              <button onClick={() => setPendingAction(null)} className="btn btn-secondary">Cancel</button>
+              <button onClick={handleConfirmDelete} className="btn btn-danger">Confirm & Delete</button>
             </div>
           </div>
         </div>
