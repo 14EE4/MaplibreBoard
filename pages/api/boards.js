@@ -38,7 +38,10 @@ export default async function handler(req, res) {
 
       const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat)
         VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat`
-      const params = [name || `board-${Date.now()}`,
+      const defaultName = (grid_x != null && grid_y != null)
+        ? `grid_${grid_x}_${grid_y}`
+        : `board-${Date.now()}`
+      const params = [name || defaultName,
         grid_x != null ? Number(grid_x) : null,
         grid_y != null ? Number(grid_y) : null,
         center_lng != null ? Number(center_lng) : null,

@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function BoardSidebar({ boardMeta, resolvedBoardId, metaText, loading, createBoardAndOpen }) {
+export default function BoardSidebar({ boardMeta, resolvedBoardId, metaText, loading, createBoardAndOpen, gridX, gridY }) {
   return (
     <aside className="board-sidebar">
       <div className="sidebar-card">
@@ -48,9 +48,13 @@ export default function BoardSidebar({ boardMeta, resolvedBoardId, metaText, loa
                 </button>
                 <button 
                   onClick={() => {
+                    const defaultName = (gridX != null && gridY != null) 
+                      ? `grid_${gridX}_${gridY}` 
+                      : 'New Board'
                     const name = (typeof window !== 'undefined' && typeof window.prompt === 'function') 
-                      ? window.prompt('Enter a name for the new board', 'New Board') 
+                      ? window.prompt('Enter a name for the new board', defaultName) 
                       : null
+                    if (name === null) return
                     createBoardAndOpen(name)
                   }} 
                   className="btn btn-secondary btn-sm btn-full"

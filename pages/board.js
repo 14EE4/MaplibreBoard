@@ -518,7 +518,10 @@ export default function Board() {
   async function createBoardAndOpen(name) {
     try {
       setLoading(true)
-      const body = { name: name || `board-${Date.now()}` }
+      const defaultName = (grid_x != null && grid_y != null)
+        ? `grid_${grid_x}_${grid_y}`
+        : `board-${Date.now()}`
+      const body = { name: name || defaultName }
       // include grid center if available in query
       if (grid_x != null && grid_y != null) {
         const size = 5 // default grid size used elsewhere (best-effort)
@@ -533,27 +536,40 @@ export default function Board() {
       // navigate to new board
       const newId = j && j.id ? j.id : null
       if (newId) {
-        // if grid coordinates were provided in the query, prefer navigating to the grid form
+        // 즉시 상태 갱신하여 딜레이 및 라우팅 미작동 문제 해결
+        setResolvedBoardId(newId)
+        setBoardMeta({
+          id: j.id,
+          name: j.name || name || defaultName,
+          grid_x: j.grid_x != null ? j.grid_x : (grid_x != null ? Number(grid_x) : null),
+          grid_y: j.grid_y != null ? j.grid_y : (grid_y != null ? Number(grid_y) : null),
+          center_lng: j.center_lng,
+          center_lat: j.center_lat,
+          posts_count: 0
+        })
+        setMetaText('')
+        loadPosts(newId)
+
+        // URL 갱신 (이미 쿼리가 동일하더라도 replace를 수행하여 일관성 유지)
         if (grid_x != null && grid_y != null) {
           const qgx = encodeURIComponent(grid_x)
           const qgy = encodeURIComponent(grid_y)
           try {
             if (router && typeof router.replace === 'function') {
-              router.replace(`/board?grid_x=${qgx}&grid_y=${qgy}`)
+              router.replace(`/board?grid_x=${qgx}&grid_y=${qgy}`, undefined, { shallow: true })
             } else {
-              window.location.href = `/board?grid_x=${qgx}&grid_y=${qgy}`
+              window.history.replaceState(null, '', `/board?grid_x=${qgx}&grid_y=${qgy}`)
             }
           } catch (navErr) {
             console.warn('router replace failed, falling back', navErr)
             window.location.href = `/board?grid_x=${qgx}&grid_y=${qgy}`
           }
         } else {
-          // fallback to id-based navigation if no grid coords available
           try {
             if (router && typeof router.replace === 'function') {
-              router.replace(`/board?id=${encodeURIComponent(newId)}`)
+              router.replace(`/board?id=${encodeURIComponent(newId)}`, undefined, { shallow: true })
             } else {
-              window.location.href = `/board?id=${encodeURIComponent(newId)}`
+              window.history.replaceState(null, '', `/board?id=${encodeURIComponent(newId)}`)
             }
           } catch (navErr) {
             console.warn('router replace failed, falling back', navErr)
@@ -645,6 +661,8 @@ export default function Board() {
             metaText={metaText}
             loading={loading}
             createBoardAndOpen={createBoardAndOpen}
+            gridX={grid_x}
+            gridY={grid_y}
           />
 
           {/* Right Column: Feed and Writing Form */}

@@ -31,14 +31,20 @@ export default function WriteForm({
       <h3>New Post</h3>
       <div className="write-form">
         <div className="author-container">
-          <input 
-            id="author" 
-            placeholder="Nickname (Optional - Max 20 chars)" 
-            maxLength={20}
-            value={author} 
-            onChange={e => setAuthor(e.target.value)} 
-            className="input-field" 
-          />
+          <div style={{ position: 'relative', width: '100%' }}>
+            <input 
+              id="author" 
+              placeholder="Nickname (Optional)" 
+              maxLength={20}
+              value={author} 
+              onChange={e => setAuthor(e.target.value)} 
+              className="input-field" 
+              style={{ paddingRight: '60px' }}
+            />
+            <div className={`char-counter ${(author || '').length >= 15 ? 'warning' : ''} ${(author || '').length >= 20 ? 'danger' : ''}`}>
+              {(author || '').length} / 20
+            </div>
+          </div>
           <label className="remember-nickname-label">
             <input 
               type="checkbox" 
