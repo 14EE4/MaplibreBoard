@@ -1,6 +1,6 @@
 const { query, pool } = require('../../lib/db')
 const crypto = require('crypto')
-const geoip = require('geoip-lite')
+const geoip = require('fast-geoip')
 const { classifyIP } = require('../../utils/ipClassifier')
 
 function parseUA(ua) {
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       let location = null;
       if (classification === 'Public IP') {
         if (ip) {
-          const geo = geoip.lookup(ip);
+          const geo = await geoip.lookup(ip);
           if (geo) {
             const country = geo.country || 'Unknown';
             const city = geo.city || 'Unknown';
