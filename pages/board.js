@@ -432,6 +432,25 @@ export default function Board() {
     if (id) {
       loadBoardById(id)
     } else if (grid_x != null && grid_y != null) {
+      // 격자 좌표 범위 검증 (5도 기준: grid_x는 0~71, grid_y는 0~35)
+      const gx = Number(grid_x)
+      const gy = Number(grid_y)
+      if (
+        Number.isNaN(gx) || 
+        Number.isNaN(gy) || 
+        gx < 0 || 
+        gx >= 72 || 
+        gy < 0 || 
+        gy >= 36
+      ) {
+        alert('Invalid grid coordinates. Redirecting to default board.')
+        try {
+          router.replace('/board?id=1')
+        } catch (e) {
+          window.location.href = '/board?id=1'
+        }
+        return
+      }
       loadBoardByGrid(grid_x, grid_y)
     } else {
       // 쿼리 매개변수가 없는 경우 일반 사용자는 차단 및 기본 보드(id=1)로 리다이렉트
