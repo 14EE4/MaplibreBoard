@@ -195,11 +195,25 @@ export default function MapPage() {
 
           map.on('click', function(e){
             try {
-              const lng = e.lngLat.lng
-              const lat = e.lngLat.lat
+              // 경도 정규화 적용 (-180 ~ 180도 범위로 고정)
+              let lng = e.lngLat.lng
+              while (lng < -180) lng += 360
+              while (lng > 180) lng -= 360
+
+              // 위도 정규화 및 클램핑 (-90 ~ 90도 범위로 고정)
+              let lat = Math.max(-90, Math.min(90, e.lngLat.lat))
+
               const size = gridState.sizeDeg
-              const gridX = Math.floor((lng + 180) / size)
-              const gridY = Math.floor((lat + 90) / size)
+              const maxGridX = Math.round(360 / size) // 5도 기준 72
+              const maxGridY = Math.round(180 / size) // 5도 기준 36
+
+              // gridX 계산 및 순환 범주 보정 (0 ~ maxGridX-1)
+              let gridX = Math.floor((lng + 180) / size)
+              gridX = (gridX % maxGridX + maxGridX) % maxGridX
+
+              // gridY 계산 및 한계 범위 제한 (0 ~ maxGridY-1)
+              let gridY = Math.floor((lat + 90) / size)
+              gridY = Math.max(0, Math.min(maxGridY - 1, gridY))
 
               // 즉시 해당 격자 보드 페이지로 이동 (보드 생성은 보드 페이지 내에서 직접 처리)
               window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
