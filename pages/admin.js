@@ -285,6 +285,9 @@ export default function Admin() {
               />
               <button type="submit" className="btn btn-primary btn-block" title="관리자 인증">🔒</button>
             </form>
+            <div style={{ marginTop: '16px' }}>
+              <a href="/" className="btn btn-secondary btn-sm btn-full" title="Home">🏠</a>
+            </div>
             {error && <p className="error-msg">{error}</p>}
           </div>
         </main>
@@ -308,7 +311,7 @@ export default function Admin() {
             <span className="badge-status">WSL Local Server</span>
           </div>
           <div className="header-actions">
-            <Link href="/" className="btn btn-secondary mr-2">Go to Home</Link>
+            <a href="/" className="btn btn-secondary mr-2" title="Home">🏠</a>
             <button onClick={logout} className="btn btn-danger-outline">Logout</button>
           </div>
         </header>

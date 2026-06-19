@@ -376,8 +376,14 @@ export default function Board() {
           setMetaText('')
           loadPosts(boardId)
         } else if (res.status === 404) {
-          setBoardMeta(null)
-          setMetaText(`Board not found (id:${boardId})`)
+          // 존재하지 않는 보드 ID로의 접속 차단 및 홈 리다이렉트
+          alert(`This board (ID: ${boardId}) does not exist. Redirecting to home.`)
+          try {
+            router.replace('/')
+          } catch (e) {
+            window.location.href = '/'
+          }
+          return
         } else {
           const body = await res.text().catch(()=>null)
           console.warn('board id fetch unexpected', res.status, body)
@@ -418,12 +424,30 @@ export default function Board() {
   }, [loadPosts])
 
   useEffect(() => {
+    // Next.js 라우터가 준비되어 쿼리 파라미터가 파싱될 때까지 대기
+    if (router && !router.isReady) return
+
     // entry: on query change
     hasScrolledRef.current = false
-    if (id) loadBoardById(id)
-    else if (grid_x != null && grid_y != null) loadBoardByGrid(grid_x, grid_y)
-    else setMetaText('Please add ?id=BOARD_ID or ?grid_x=NUM&grid_y=NUM to the URL.')
-  }, [id, grid_x, grid_y, loadBoardById, loadBoardByGrid])
+    if (id) {
+      loadBoardById(id)
+    } else if (grid_x != null && grid_y != null) {
+      loadBoardByGrid(grid_x, grid_y)
+    } else {
+      // 쿼리 매개변수가 없는 경우 일반 사용자는 차단 및 홈(/)으로 리다이렉트
+      try {
+        const isAuthed = sessionStorage.getItem('admin-authed') === '1'
+        if (!isAuthed) {
+          alert('Access denied. Please access the board page with proper grid coordinates or ID.')
+          router.replace('/')
+        } else {
+          setMetaText('Please add ?id=BOARD_ID or ?grid_x=NUM&grid_y=NUM to the URL.')
+        }
+      } catch (e) {
+        router.replace('/')
+      }
+    }
+  }, [id, grid_x, grid_y, loadBoardById, loadBoardByGrid, router, router?.isReady])
 
   async function submitPost() {
     if (!resolvedBoardId) { alert('No board selected. Please specify id or grid_x/grid_y in URL.'); return }
@@ -522,6 +546,17 @@ export default function Board() {
         ? `grid_${grid_x}_${grid_y}`
         : `board-${Date.now()}`
       const body = { name: name || defaultName }
+
+      // 격자 없는 일반 보드 생성을 위한 관리자 인증 토큰 주입
+      try {
+        const storedPw = sessionStorage.getItem('admin-pw')
+        if (storedPw) {
+          body.auth = storedPw
+        }
+      } catch (e) {
+        console.warn('sessionStorage access failed', e)
+      }
+
       // include grid center if available in query
       if (grid_x != null && grid_y != null) {
         const size = 5 // default grid size used elsewhere (best-effort)
@@ -644,8 +679,8 @@ export default function Board() {
             <button onClick={() => window.location.href = '/map'} className="btn btn-secondary btn-sm">
               ← View Map
             </button>
-            <button onClick={() => window.location.href = '/'} className="btn btn-secondary btn-sm ml-2">
-              Home
+            <button onClick={() => window.location.href = '/'} className="btn btn-secondary btn-sm ml-2" title="Home">
+              🏠
             </button>
           </div>
           <div className="header-brand">

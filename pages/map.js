@@ -211,6 +211,24 @@ export default function MapPage() {
         const gridControl = document.createElement('div')
         gridControl.className = 'map-grid-control'
 
+        // 🏠 Home Button Group 추가
+        const homeGroup = document.createElement('div')
+        homeGroup.className = 'control-group'
+        const homeBtn = document.createElement('button')
+        homeBtn.innerHTML = '🏠'
+        homeBtn.title = 'Home'
+        homeBtn.className = 'btn btn-secondary btn-sm'
+        homeBtn.style.padding = '4px 10px'
+        homeBtn.style.fontSize = '12px'
+        homeBtn.style.borderRadius = '6px'
+        homeBtn.style.cursor = 'pointer'
+        homeBtn.style.display = 'flex'
+        homeBtn.style.alignItems = 'center'
+        homeBtn.style.gap = '4px'
+        homeBtn.addEventListener('click', function() { window.location.href = '/' })
+        homeGroup.appendChild(homeBtn)
+        gridControl.appendChild(homeGroup)
+
         const toggleGroup = document.createElement('div')
         toggleGroup.className = 'control-group'
         const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = gridState.enabled; toggle.id = 'gridToggle'

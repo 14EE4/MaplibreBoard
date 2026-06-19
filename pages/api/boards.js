@@ -31,9 +31,28 @@ export default async function handler(req, res) {
     }
 
     if (method === 'POST') {
-      // accept optional grid and center fields so clients can create boards tied to a grid
-      const { name, grid_x, grid_y, center_lng, center_lat } = req.body || {}
+      const { name, grid_x, grid_y, center_lng, center_lat, auth, password } = req.body || {}
       
+      // 격자 정보가 누락된 일반 보드 생성인 경우 관리자 검증 수행
+      if (grid_x == null || grid_y == null) {
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+        if (!ADMIN_PASSWORD) {
+          console.error(`[${timestamp}] [API ERROR] ADMIN_PASSWORD environment variable is not defined`)
+          return res.status(500).json({ error: 'internal_error' })
+        }
+
+        let authHeader = req.headers['authorization'] || ''
+        if (authHeader.startsWith('Bearer ')) {
+          authHeader = authHeader.substring(7)
+        }
+        const providedAuth = auth || password || authHeader
+        if (providedAuth !== ADMIN_PASSWORD) {
+          const failTimestamp = new Date().toISOString()
+          console.log(`[${failTimestamp}] [API LOG] [401 Unauthorized] 비인가 사용자의 일반 보드 생성 차단 (IP: ${ip})`)
+          return res.status(401).json({ error: 'unauthorized' })
+        }
+      }
+
       console.log(`[${timestamp}] [API LOG] [POST] /api/boards - 새 게시판 생성 요청 들어옴 (IP: ${ip}, UA: ${userAgent})`)
 
       const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat)
