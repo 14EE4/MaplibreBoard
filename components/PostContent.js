@@ -6,6 +6,8 @@ export default function PostContent({ content, onCitationClick, onCitationHover 
   // Split content by citation patterns: >>digits or @digits
   const parts = content.split(/(>>\d+|@\d+)/g)
 
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+
   return (
     <>
       {parts.map((part, index) => {
@@ -33,14 +35,32 @@ export default function PostContent({ content, onCitationClick, onCitationHover 
           )
         }
 
-        // Handle newlines within normal text segments
-        const lines = part.split('\n')
-        return lines.map((line, lineIdx) => (
-          <React.Fragment key={`${index}-${lineIdx}`}>
-            {line}
-            {lineIdx < lines.length - 1 && <br />}
-          </React.Fragment>
-        ))
+        // For non-citation segments, parse URLs
+        const subParts = part.split(urlRegex)
+        return subParts.map((subPart, subIdx) => {
+          if (urlRegex.test(subPart)) {
+            return (
+              <a
+                key={`${index}-${subIdx}`}
+                href={subPart}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="post-link"
+              >
+                {subPart}
+              </a>
+            )
+          }
+
+          // Handle newlines within normal text segments
+          const lines = subPart.split('\n')
+          return lines.map((line, lineIdx) => (
+            <React.Fragment key={`${index}-${subIdx}-${lineIdx}`}>
+              {line}
+              {lineIdx < lines.length - 1 && <br />}
+            </React.Fragment>
+          ))
+        })
       })}
     </>
   )
