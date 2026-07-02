@@ -112,8 +112,8 @@ export default function Admin() {
   useEffect(() => {
     if (!authorized) return
     fetch('/api/boards')
-      .then((r) => r.json())
-      .then(setBoards)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setBoards(Array.isArray(data) ? data : []))
       .catch(() => setBoards([]))
   }, [authorized])
 

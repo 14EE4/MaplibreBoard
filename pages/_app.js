@@ -17,7 +17,7 @@ export default function MyApp({ Component, pageProps }) {
           try {
             const clone = response.clone();
             const data = await clone.json();
-            if (data && data.banned) {
+            if (data && data.banned && !window.location.pathname.startsWith('/admin')) {
               alert(`차단된 IP입니다.\n사유: ${data.reason || '사유가 입력되지 않았습니다.'}`);
             }
           } catch (e) {
