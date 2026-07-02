@@ -12,7 +12,11 @@ export default function Admin() {
   const [error, setError] = useState('')
 
   // New states for moderation
-  const [activeTab, setActiveTab] = useState('boards') // 'boards' or 'moderation'
+  const [activeTab, setActiveTab] = useState('boards') // 'boards', 'moderation', 'posts', 'logs', 'ip_bans'
+  const [bannedIps, setBannedIps] = useState([])
+  const [loadingBans, setLoadingBans] = useState(false)
+  const [banInputIp, setBanInputIp] = useState('')
+  const [banInputReason, setBanInputReason] = useState('')
 
   useEffect(() => {
     // Parse query parameter to set initial active tab
@@ -26,6 +30,8 @@ export default function Admin() {
       setActiveTab('posts')
     } else if (tabParam === 'logs') {
       setActiveTab('logs')
+    } else if (tabParam === 'ip_bans') {
+      setActiveTab('ip_bans')
     }
   }, [])
 
@@ -35,6 +41,7 @@ export default function Admin() {
     if (tab === 'moderation') newTabParam = 'censorship'
     else if (tab === 'posts') newTabParam = 'posts'
     else if (tab === 'logs') newTabParam = 'logs'
+    else if (tab === 'ip_bans') newTabParam = 'ip_bans'
     try {
       if (router && typeof router.push === 'function') {
         router.push({
@@ -48,6 +55,7 @@ export default function Admin() {
       window.history.pushState(null, '', `/admin?tab=${newTabParam}`)
     }
   }, [router])
+
   const [images, setImages] = useState([])
   const [loadingImages, setLoadingImages] = useState(false)
   const [pendingAction, setPendingAction] = useState(null) // { fileName, action, postInfo }
@@ -104,8 +112,8 @@ export default function Admin() {
   useEffect(() => {
     if (!authorized) return
     fetch('/api/boards')
-      .then((r) => r.json())
-      .then(setBoards)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setBoards(Array.isArray(data) ? data : []))
       .catch(() => setBoards([]))
   }, [authorized])
 
@@ -118,11 +126,92 @@ export default function Admin() {
     if (!authorized || activeTab !== 'posts') return
     fetchPosts()
   }, [authorized, activeTab])
-
   useEffect(() => {
     if (!authorized || activeTab !== 'logs') return
     fetchLogs()
   }, [authorized, activeTab])
+
+  useEffect(() => {
+    if (!authorized || activeTab !== 'ip_bans') return
+    fetchBannedIps()
+  }, [authorized, activeTab])
+
+  async function fetchBannedIps() {
+    setLoadingBans(true)
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/ip-bans?auth=${encodeURIComponent(inputPw)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBannedIps(data)
+      } else {
+        const err = await res.json()
+        setModerationError(err.error || 'Failed to load banned IPs.')
+      }
+    } catch (err) {
+      console.error(err)
+      setModerationError('Failed to communicate with server.')
+    } finally {
+      setLoadingBans(false)
+    }
+  }
+
+  async function handleBanIp(ip, postId, reason) {
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/ip-bans`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          auth: inputPw,
+          ip,
+          postId,
+          reason
+        })
+      })
+      if (res.ok) {
+        alert('IP 차단이 완료되었습니다.')
+        setBanInputIp('')
+        setBanInputReason('')
+        fetchBannedIps()
+        if (activeTab === 'posts') {
+          fetchPosts()
+        }
+      } else {
+        const err = await res.json()
+        alert(err.error || 'IP 차단에 실패했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('서버와 통신에 실패했습니다.')
+    }
+  }
+
+  async function handleUnbanIp(ipToUnban) {
+    if (!confirm(`${ipToUnban} 차단을 해제하시겠습니까?`)) return
+    setModerationError('')
+    try {
+      const res = await fetch(`/api/admin/ip-bans?auth=${encodeURIComponent(inputPw)}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ip: ipToUnban })
+      })
+      if (res.ok) {
+        alert('차단이 해제되었습니다.')
+        fetchBannedIps()
+      } else {
+        const err = await res.json()
+        alert(err.error || '차단 해제에 실패했습니다.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('서버와 통신에 실패했습니다.')
+    }
+  }
 
   async function fetchLogs() {
     setLoadingLogs(true)
@@ -202,7 +291,12 @@ export default function Admin() {
         } catch (e) { }
         setAuthorized(true)
       } else {
-        setError('Incorrect password.')
+        try {
+          const errData = await res.json()
+          setError(errData.error || 'Incorrect password.')
+        } catch (e) {
+          setError('Incorrect password.')
+        }
       }
     } catch (err) {
       console.error(err)
@@ -308,7 +402,6 @@ export default function Admin() {
         <header className="dashboard-header">
           <div className="header-brand">
             <h1>MaplibreBoard Admin</h1>
-            <span className="badge-status">WSL Local Server</span>
           </div>
           <div className="header-actions">
             <a href="/" className="btn btn-secondary mr-2" title="Home">🏠</a>
@@ -342,9 +435,14 @@ export default function Admin() {
           >
             Logs
           </button>
+          <button
+            onClick={() => handleTabChange('ip_bans')}
+            className={`tab-btn ${activeTab === 'ip_bans' ? 'active' : ''}`}
+          >
+            IP Bans ({bannedIps.length})
+          </button>
         </nav>
 
-        {/* Main Content Area */}
         <div className="dashboard-content">
           {moderationError && <div className="alert-error">{moderationError}</div>}
 
@@ -531,14 +629,27 @@ export default function Admin() {
                           <td><strong>{post.author || 'Anonymous'}</strong></td>
                           <td className="table-post-content" title={post.content}>
                             {post.content}
-                          </td>
                           <td>
                             <code className="ip-badge">{post.ip || 'No Record'}</code>
+                            {post.ip && (
+                              <button
+                                onClick={() => {
+                                  const customReason = prompt(`차단 사유를 기입하세요 (해당 글의 일부 내용이 자동으로 첨부됩니다):\n\n글 내용: "${post.content ? post.content.substring(0, 30) + '...' : ''}"`)
+                                  if (customReason === null) return;
+                                  handleBanIp(null, post.id, customReason)
+                                }}
+                                className="btn btn-danger-outline btn-xs"
+                                style={{ padding: '2px 6px', fontSize: '11px', marginLeft: '6px', cursor: 'pointer' }}
+                                title="Ban writer's IP"
+                              >
+                                🚫 Ban
+                              </button>
+                            )}
                             {post.location && (
                               <span className="location-badge">{post.location}</span>
                             )}
                           </td>
-                          <td>
+
                             {post.os && post.browser ? (
                               <span className="ua-badge">{post.os} / {post.browser}</span>
                             ) : (
@@ -589,6 +700,98 @@ export default function Admin() {
                       {logs.err || 'Error logs are empty or no records exist.'}
                     </pre>
                   </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Tab 5: IP Bans Management */}
+          {activeTab === 'ip_bans' && (
+            <section className="card-section">
+              <div className="section-header">
+                <h2>IP Ban Management</h2>
+                <button onClick={fetchBannedIps} className="btn btn-secondary btn-sm" disabled={loadingBans}>
+                  Refresh
+                </button>
+              </div>
+
+              {/* Manual IP Ban Form */}
+              <div className="ban-form-container" style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '20px', borderRadius: '8px', marginBottom: '24px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Direct IP Ban</h3>
+                <form onSubmit={(e) => {
+                  e.preventDefault()
+                  if (!banInputIp.trim()) {
+                    alert('IP 주소를 입력하세요.')
+                    return
+                  }
+                  handleBanIp(banInputIp.trim(), null, banInputReason.trim())
+                }} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af' }}>IP Address</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 192.168.0.1"
+                      value={banInputIp}
+                      onChange={(e) => setBanInputIp(e.target.value)}
+                      className="form-control"
+                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', padding: '6px 12px' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '1', minWidth: '200px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af' }}>Ban Reason</label>
+                    <input
+                      type="text"
+                      placeholder="Reason for ban"
+                      value={banInputReason}
+                      onChange={(e) => setBanInputReason(e.target.value)}
+                      className="form-control"
+                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', padding: '6px 12px' }}
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-danger" style={{ height: '38px', padding: '0 16px', borderRadius: '4px' }}>🚫 Ban IP</button>
+                </form>
+              </div>
+
+              {/* Banned IP List */}
+              {loadingBans ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>Loading banned IPs...</p>
+                </div>
+              ) : bannedIps.length === 0 ? (
+                <div className="empty-state">
+                  <p>No banned IPs found.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>IP Address</th>
+                        <th>Reason</th>
+                        <th>Banned At</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bannedIps.map((ban) => (
+                        <tr key={ban.id}>
+                          <td><code className="ip-badge" style={{ fontSize: '13px' }}>{ban.ip}</code></td>
+                          <td style={{ color: '#e5e7eb' }}>{ban.reason}</td>
+                          <td style={{ color: '#9ca3af' }}>{ban.created_at ? formatTime(ban.created_at) : 'No Record'}</td>
+                          <td>
+                            <button
+                              onClick={() => handleUnbanIp(ban.ip)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ color: '#f3f4f6', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
+                            >
+                              Unban
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </section>

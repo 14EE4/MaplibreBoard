@@ -2,6 +2,7 @@ const { query, pool } = require('../../lib/db')
 const crypto = require('crypto')
 const geoip = require('fast-geoip')
 const { classifyIP } = require('../../utils/ipClassifier')
+const { checkIPBanMiddleware } = require('../../lib/ipBan')
 
 function parseUA(ua) {
   if (!ua) return { os: 'Unknown', browser: 'Unknown' };
@@ -32,6 +33,8 @@ function parseUA(ua) {
 // DELETE /api/posts?id=ID => delete
 
 export default async function handler(req, res) {
+  if (await checkIPBanMiddleware(req, res)) return
+
   const { method } = req
   try {
     if (method === 'GET') {

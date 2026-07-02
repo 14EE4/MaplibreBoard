@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { checkIPBanMiddleware } from '../../lib/ipBan';
 
 export const config = {
   api: {
@@ -10,6 +11,8 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  if (await checkIPBanMiddleware(req, res)) return
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

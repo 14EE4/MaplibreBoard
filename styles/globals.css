@@ -25,6 +25,19 @@ button{padding:6px 8px}
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
+/* Post inline links */
+.post-link {
+  color: #10b981;
+  font-weight: 500;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+  word-break: break-all;
+}
+
+.post-link:hover {
+  color: #34d399;
+}
+
 /* Post preview popover card */
 .post-preview-card {
   background: rgba(17, 24, 39, 0.95);
