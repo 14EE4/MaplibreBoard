@@ -1,6 +1,9 @@
 const { query } = require('../../lib/db')
+const { checkIPBanMiddleware } = require('../../lib/ipBan')
 
 export default async function handler(req, res) {
+  if (await checkIPBanMiddleware(req, res)) return
+
   const { method } = req
 
   const forwarded = req.headers['x-forwarded-for']
