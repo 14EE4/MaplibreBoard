@@ -204,7 +204,9 @@ export default function AllFeedPage() {
       try {
         const res = await fetch(`/api/posts?t=${Date.now()}`)
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`)
+          setPosts([])
+          setErrorMsg('Failed to load posts.')
+          return
         }
         const data = await res.json()
         setPosts(Array.isArray(data) ? data : [])

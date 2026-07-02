@@ -166,11 +166,13 @@ export default function MapPage() {
 
         function updateBoardsOverlay() {
           ensureBoardsLayer()
-          fetch('/api/boards').then(r => r.json()).then(function(boards) {
-            const data = buildBoardsGeoJSON(boards, gridState.sizeDeg)
-            const src = map.getSource(BOARD_SOURCE)
-            try { src.setData(data) } catch (e) { console.warn('set boards data failed', e) }
-          }).catch(function(err){ console.warn('load boards failed', err) })
+          fetch('/api/boards')
+            .then(r => r.ok ? r.json() : [])
+            .then(function(boards) {
+              const data = buildBoardsGeoJSON(Array.isArray(boards) ? boards : [], gridState.sizeDeg)
+              const src = map.getSource(BOARD_SOURCE)
+              try { src.setData(data) } catch (e) { console.warn('set boards data failed', e) }
+            }).catch(function(err){ console.warn('load boards failed', err) })
         }
 
         // Attach common map event handlers (call after each map creation)
