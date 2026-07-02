@@ -62,6 +62,54 @@ export default function IndexPage() {
           </div>
         </section>
 
+        {/* Links Banner Section */}
+        <section className="promo-section">
+          <h2>Related Projects & Profile</h2>
+          <div className="promo-grid">
+            <a 
+              href="https://github.com/14EE4" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="promo-card"
+            >
+              <div className="promo-icon">🐙</div>
+              <div className="promo-info">
+                <h4>개발자 공식 GitHub</h4>
+                <p>개발자의 깃허브 프로필 및 오픈소스 프로젝트 확인하기</p>
+              </div>
+              <span className="arrow">→</span>
+            </a>
+
+            <a 
+              href="https://14ee4.github.io/minesweeper/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="promo-card"
+            >
+              <div className="promo-icon">🎮</div>
+              <div className="promo-info">
+                <h4>지뢰찾기 웹 프리미엄 에디션</h4>
+                <p>배포 및 운영 중인 프리미엄 지뢰찾기 게임 바로가기</p>
+              </div>
+              <span className="arrow">→</span>
+            </a>
+
+            <a 
+              href="https://text-image-generator-one.vercel.app/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="promo-card"
+            >
+              <div className="promo-icon">🔤</div>
+              <div className="promo-info">
+                <h4>픽셀 텍스트 → 이미지 변환기</h4>
+                <p>픽셀 폰트 스프라이트를 사용하여 텍스트를 투명 배경 PNG로 변환</p>
+              </div>
+              <span className="arrow">→</span>
+            </a>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer className="landing-footer">
           <p>© 2026 MaplibreBoard. Self-Hosted Map Board System.</p>
