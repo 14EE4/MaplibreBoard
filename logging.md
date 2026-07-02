@@ -75,7 +75,13 @@
   * *조회 시도:* `[2026-06-18T07:29:19.123Z] [API LOG] [GET] /api/admin/posts - 어드민 전체 게시글 목록 조회 시도 (IP: 172.30.1.82, UA: Mozilla/5.0...)`
   * *조회 성공:* `[2026-06-18T07:29:19.234Z] [API LOG] [200 OK] 어드민 전체 게시글 목록 조회 성공 - 총 100건 (IP: 172.30.1.82)`
 
-### 🔴 4) 예외 에러 (Try-Catch 예외)
+### 🟣 4) IP 차단 관련 로그 (API & Admin)
+* **어드민 IP 차단 등록 (`POST /api/admin/ip-bans`)**
+  * *등록 성공:* `[2026-06-18T07:29:20.123Z] [API LOG] [201 Created] IP 차단 등록 완료 (IP: 1.2.3.4, 사유: 쓴 글: "광고..." | 사유: 도배 차단)`
+* **어드민 IP 차단 해제 (`DELETE /api/admin/ip-bans`)**
+  * *해제 성공:* `[2026-06-18T07:29:21.345Z] [API LOG] [200 OK] IP 차단 해제 완료 (IP: 1.2.3.4)`
+
+### 🔴 5) 예외 에러 (Try-Catch 예외)
 모든 백엔드 API의 catch 블록 에러 로깅 형식을 표준화하여, PM2 로그에서 에러 스택 트레이스 필터링이 가능하도록 접두사를 추가했습니다.
 ```text
 [API ERROR] posts API error Error: connect ECONNREFUSED 127.0.0.1:5432
