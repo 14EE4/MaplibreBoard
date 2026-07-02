@@ -629,6 +629,7 @@ export default function Admin() {
                           <td><strong>{post.author || 'Anonymous'}</strong></td>
                           <td className="table-post-content" title={post.content}>
                             {post.content}
+                          </td>
                           <td>
                             <code className="ip-badge">{post.ip || 'No Record'}</code>
                             {post.ip && (
@@ -649,7 +650,7 @@ export default function Admin() {
                               <span className="location-badge">{post.location}</span>
                             )}
                           </td>
-
+                          <td>
                             {post.os && post.browser ? (
                               <span className="ua-badge">{post.os} / {post.browser}</span>
                             ) : (
