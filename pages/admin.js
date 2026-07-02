@@ -291,7 +291,12 @@ export default function Admin() {
         } catch (e) { }
         setAuthorized(true)
       } else {
-        setError('Incorrect password.')
+        try {
+          const errData = await res.json()
+          setError(errData.error || 'Incorrect password.')
+        } catch (e) {
+          setError('Incorrect password.')
+        }
       }
     } catch (err) {
       console.error(err)
