@@ -308,7 +308,6 @@ export default function Admin() {
         <header className="dashboard-header">
           <div className="header-brand">
             <h1>MaplibreBoard Admin</h1>
-            <span className="badge-status">WSL Local Server</span>
           </div>
           <div className="header-actions">
             <a href="/" className="btn btn-secondary mr-2" title="Home">🏠</a>
